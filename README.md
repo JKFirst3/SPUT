@@ -2,7 +2,7 @@
 
 **Statistical Package for User Testing** ist ein lokales Analysewerkzeug für UserTesting-Exporte.
 
-Aktuelle Version: **1.0.2**. Die Versionsregeln stehen in [docs/VERSIONING.md](docs/VERSIONING.md), die technische Struktur in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Aktuelle Version: **1.0.3**. Die Versionsregeln stehen in [docs/VERSIONING.md](docs/VERSIONING.md), die technische Struktur in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Start
 
@@ -20,6 +20,7 @@ Unter Windows:
 3. Zum Beenden `SPUT beenden.bat` doppelklicken.
 
 Die Startdateien verwenden automatisch den Ordner, in dem sie liegen. Der SPUT-Ordner kann deshalb auf einen anderen Rechner kopiert oder verschoben werden, ohne Pfade in den Dateien anzupassen.
+Die Startdateien starten den Node-Prozess direkt im Hintergrund und öffnen die App erst, nachdem der Prozess weiterhin aktiv ist und Port 4173 tatsächlich bereitsteht.
 
 Manuell im Terminal:
 

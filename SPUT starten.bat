@@ -13,8 +13,8 @@ cd /d "%PROJECT_DIR%" || (
 echo SPUT wird gestartet ...
 echo Projektordner: %PROJECT_DIR%
 
-where npm >nul 2>&1 || (
-  echo npm wurde nicht gefunden. Bitte Node.js installieren.
+where node >nul 2>&1 || (
+  echo Node.js wurde nicht gefunden. Bitte Node.js installieren.
   pause
   exit /b 1
 )
@@ -29,7 +29,7 @@ if defined SPUT_PID (
 )
 
 echo Server wird im Hintergrund gestartet ...
-start "" /b cmd /c "npm start > \"%PROJECT_DIR%.sput.log\" 2>&1"
+start "" /b cmd /c "node server\index.js > \"%PROJECT_DIR%.sput.log\" 2>&1"
 
 for /L %%I in (1,1,15) do (
   timeout /t 1 /nobreak >nul

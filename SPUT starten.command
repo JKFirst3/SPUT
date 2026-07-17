@@ -13,8 +13,8 @@ cd "$PROJECT_DIR" || {
 echo "SPUT wird gestartet ..."
 echo "Projektordner: $PROJECT_DIR"
 
-if ! command -v npm >/dev/null 2>&1; then
-  echo "npm wurde nicht gefunden. Bitte Node.js installieren."
+if ! command -v node >/dev/null 2>&1; then
+  echo "Node.js wurde nicht gefunden. Bitte Node.js installieren."
   read -k 1 "?Drücke eine Taste zum Schließen ..."
   exit 1
 fi
@@ -27,12 +27,16 @@ if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
 fi
 
 echo "Server wird im Hintergrund gestartet ..."
-nohup npm start > "$PROJECT_DIR/.sput.log" 2>&1 &
+nohup node "$PROJECT_DIR/server/index.js" > "$PROJECT_DIR/.sput.log" 2>&1 &
 SERVER_PID=$!
 disown "$SERVER_PID" 2>/dev/null
 
 for _ in {1..30}; do
-  if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+  if kill -0 "$SERVER_PID" >/dev/null 2>&1 && lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+    sleep 0.4
+    if ! kill -0 "$SERVER_PID" >/dev/null 2>&1; then
+      break
+    fi
     echo "SPUT läuft auf http://localhost:$PORT"
     open "http://localhost:$PORT"
     osascript -e 'tell application "Terminal" to close front window' >/dev/null 2>&1 &
