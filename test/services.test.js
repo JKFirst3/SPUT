@@ -10,6 +10,7 @@ import { ExportService } from "../server/export-service.js";
 import { ProjectRepository } from "../server/project-repository.js";
 import { TextAnalysisService } from "../server/text-analysis-service.js";
 import { AnalysisNavigator } from "../public/core/analysis-navigator.js";
+import { parseUserTestingExport } from "../server/parser.js";
 
 const question = { id: "q1", number: 1, position: 1, displayCode: "Q1", prompt: "", label: "Was gefällt?", type: "single_choice", columns: [{ key: "c1", label: "Antwort" }] };
 const dataset = (name, values) => ({ name, fileName: `${name}.xlsx`, participants: values.length, complete: values.length, completionRate: 1, countries: ["DE"], metadata: [], questions: [question], records: values.map((value) => ({ c1: value })), schema: { format: "Test" } });
@@ -77,4 +78,26 @@ test("dashboard navigation preselects the clicked question in guided analysis", 
   navigator.selectQuestion({ id: "q8", kind: "text" }, "Offene Antworten");
   assert.deepEqual(state.analysisSelection, ["q8"]);
   assert.equal(state.analysisGoal, "text");
+});
+
+test("small current-format samples still recognize evidence-backed free text", async (context) => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "sput-small-text-"));
+  const file = path.join(directory, "small-open-text.xlsx");
+  context.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Daten");
+  sheet.addRow(["Session", "Fragen"]);
+  sheet.addRow(["", "Q1. Please explain why you selected this solution."]);
+  sheet.addRow(["Teilnehmer-ID", "Antwort"]);
+  [
+    "The controls are much easier to understand at first glance.",
+    "I would choose it because the layout feels less distracting.",
+    "The second concept gives me clearer feedback after each action.",
+    "It seems faster although I would need to test it for longer.",
+    "I prefer the larger buttons because they are easier to reach.",
+    "The terminology matches what I already know from similar tools.",
+  ].forEach((answer, index) => sheet.addRow([`P${index + 1}`, answer]));
+  await workbook.xlsx.writeFile(file);
+  const parsed = await parseUserTestingExport(file, "small-open-text.xlsx");
+  assert.equal(parsed.questions[0].type, "text");
 });

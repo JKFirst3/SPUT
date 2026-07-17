@@ -2,7 +2,7 @@
 
 **Statistical Package for User Testing** ist ein lokales Analysewerkzeug für UserTesting-Exporte.
 
-Aktuelle Version: **1.0.1**. Die Versionsregeln stehen in [docs/VERSIONING.md](docs/VERSIONING.md), die technische Struktur in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Aktuelle Version: **1.0.2**. Die Versionsregeln stehen in [docs/VERSIONING.md](docs/VERSIONING.md), die technische Struktur in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Start
 
@@ -34,6 +34,7 @@ Danach läuft SPUT unter [http://localhost:4173](http://localhost:4173).
 
 - Import von UserTesting-Umfrageexporten im XLSX-Format
 - automatische Erkennung des dreizeiligen Exportschemas
+- erneute Fragetyp-Erkennung nach dem Zusammenführen alter Länderblätter, damit kleine Länderstichproben Freitext nicht fälschlich als Auswahl festlegen
 - Rekonstruktion von Fragen mit mehreren Antwortspalten
 - Erkennung von Einfach-/Mehrfachauswahl, offenen Antworten, Skalen, Matrix und Ranking
 - verbindlicher Import-Prüfschritt für Studienname, Fragetext, Antwortoptionen und Fragetyp

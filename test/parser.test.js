@@ -220,4 +220,7 @@ test("detects both supplied current and legacy multi-country exports", async () 
   assert.equal(legacy.countries.length, 6);
   assert.ok(legacy.participants > current.participants);
   assert.equal(legacy.questions.length, current.questions.length);
+  const legacyComments = legacy.questions.find((question) => question.displayCode === "Q27");
+  assert.equal(legacyComments.type, "text");
+  assert.match(legacyComments.label, /Kommentare|Vorschläge/i);
 });

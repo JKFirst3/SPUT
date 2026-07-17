@@ -46,6 +46,16 @@ function numeric(value) {
   return matches?.length === 1 ? Number(matches[0]) : null;
 }
 
+function looksLikeFreeText(question, values) {
+  const strings = values.filter(isPresent).map(text);
+  if (!strings.length) return false;
+  const uniqueRatio = new Set(strings.map((value) => value.toLowerCase())).size / strings.length;
+  const averageLength = strings.reduce((sum, value) => sum + value.length, 0) / strings.length;
+  const sentenceRatio = strings.filter((value) => /\s/.test(value) && (value.split(/\s+/).length >= 5 || /[.!?]/.test(value))).length / strings.length;
+  const openPrompt = /kommentar|vorschl|feedback|beschreib|begr[uü]nd|erkl[aä]r|warum|weshalb|eigene[nr]? worte|freitext|comment|suggest|describe|explain|why|anything else|tell us/i.test(question.prompt);
+  return uniqueRatio >= 0.45 && (openPrompt || averageLength >= 28 || sentenceRatio >= 0.35);
+}
+
 function inferQuestionType(question, records) {
   const columns = question.columns;
   const prompt = question.prompt.toLowerCase();
@@ -91,6 +101,7 @@ function inferQuestionType(question, records) {
     return "multiple_choice";
   }
 
+  if (numericRatio <= 0.2 && looksLikeFreeText(question, values)) return "text";
   if (numericRatio > 0.8) {
     const min = Math.min(...numericValues);
     const max = Math.max(...numericValues);
@@ -227,7 +238,8 @@ function parseSheet(sheet, sourceName) {
       const numericRatio = primaryValues.length
         ? primaryValues.map(numeric).filter((value) => value !== null).length / primaryValues.length
         : 0;
-      if (numericRatio > 0.8) type = unique.size <= 12 ? "scale" : "numeric";
+      if (numericRatio <= 0.2 && looksLikeFreeText(question, primaryValues)) type = "text";
+      else if (numericRatio > 0.8) type = unique.size <= 12 ? "scale" : "numeric";
       else if (unique.size <= 20 || unique.size / Math.max(primaryValues.length, 1) < 0.35) type = "single_choice";
       else type = "text";
     }
@@ -362,6 +374,26 @@ function mergeCountrySheets(sheetDatasets, originalName) {
       records.push(record);
     });
   });
+  // A legacy export is split into small country samples. Per-sheet cardinality can
+  // therefore make open text look categorical (for example 14 unique answers in
+  // 21 cases). Reclassify every question on the complete merged sample instead
+  // of allowing the first country sheet to determine the final type.
+  let mergedQuestionCounter = 0;
+  let mergedInstructionCounter = 0;
+  const mergedQuestions = questions.map((question) => {
+    const type = inferQuestionType(question, records);
+    const isInstruction = type === "instruction";
+    const number = isInstruction ? ++mergedInstructionCounter : ++mergedQuestionCounter;
+    return {
+      ...question,
+      id: `${isInstruction ? "a" : "q"}${number}`,
+      number,
+      displayCode: `${isInstruction ? "A" : "Q"}${number}`,
+      type,
+      review: reviewDefinition(question, records),
+      columns: question.columns.map((column) => ({ ...column, questionNumber: number })),
+    };
+  });
   const duration = metadata.find((column) => column.label === "Dauer der Studie");
   const status = metadata.find((column) => column.label === "Status");
   const country = metadata.find((column) => /^(Land|Country)$/i.test(column.label));
@@ -379,7 +411,7 @@ function mergeCountrySheets(sheetDatasets, originalName) {
     averageDurationSeconds: durations.length ? Math.round(durations.reduce((sum, value) => sum + value, 0) / durations.length) : null,
     countries: country ? [...new Set(records.map((record) => record[country.key]).filter(isPresent))] : [],
     metadata,
-    questions,
+    questions: mergedQuestions,
     records,
     schema: {
       headerRows: 3,
