@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f5f7fb" />
+    <title>SPUT · Statistical Package for User Testing</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">
+            <span></span><span></span><span></span>
+          </div>
+          <div>
+            <strong>SPUT</strong>
+            <small>Statistical Package<br />for User Testing</small>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item active" data-view="dashboard">
+            <span class="nav-icon">⌂</span><span>Dashboard</span>
+          </button>
+          <button class="nav-item" data-view="data" disabled>
+            <span class="nav-icon">▦</span><span>Daten</span>
+          </button>
+          <button class="nav-item" data-view="analysis" disabled>
+            <span class="nav-icon">⌁</span><span>Analysieren</span>
+          </button>
+          <button class="nav-item" data-view="interactive" disabled>
+            <span class="nav-icon">◉</span><span>Interaktiv</span>
+          </button>
+          <button class="nav-item" data-view="studies">
+            <span class="nav-icon">◫</span><span>Studien</span>
+          </button>
+          <div class="help-outline hidden" id="helpOutline" aria-label="Inhalt der Anleitung">
+            <span class="help-divider"></span>
+            <p>ANLEITUNG</p>
+            <button data-help-section="helpStart">Erste Schritte</button>
+            <button data-help-section="helpImport">Import prüfen</button>
+            <button data-help-section="helpDashboard">Dashboard</button>
+            <button data-help-section="helpData">Daten</button>
+            <button data-help-section="helpAnalysis">Analysieren</button>
+            <button data-help-section="helpInteractive">Interaktiv</button>
+            <button data-help-section="helpStudies">Studien</button>
+            <button data-help-section="helpExport">KI-Export</button>
+            <button data-help-section="helpSettings">Einstellungen</button>
+            <button data-help-section="helpLimits">Richtig interpretieren</button>
+            <button data-help-section="helpMaintenance">Anleitung aktuell halten</button>
+          </div>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="sidebar-actions">
+            <button class="settings-button" id="openSettings" aria-label="Einstellungen">⚙</button>
+            <button class="new-import" id="newImport">＋ Neuer Import</button>
+          </div>
+        </div>
+        <div class="sidebar-resizer" id="sidebarResizer" title="Seitenleiste ziehen"></div>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">WORKSPACE</p>
+            <h1 id="pageTitle">Übersicht</h1>
+          </div>
+          <div class="top-actions">
+            <div class="dataset-chip hidden" id="datasetChip">
+              <span class="status-dot"></span>
+              <span id="datasetChipText">Datensatz</span>
+            </div>
+            <button class="icon-button" title="Hilfe">?</button>
+          </div>
+        </header>
+
+        <section class="view active" id="dashboardView">
+          <div class="empty-state" id="emptyState">
+            <div class="upload-hero">
+              <div class="hero-copy">
+                <span class="pill">SPUT 0.1 · Survey Edition</span>
+                <h2>Aus Rohdaten wird<br /><span>klare Erkenntnis.</span></h2>
+                <p>
+                  Lade einen UserTesting-Export hoch. SPUT erkennt die Umfrage,
+                  rekonstruiert Fragetypen und erstellt automatisch ein vollständiges Dashboard.
+                </p>
+                <label class="primary-button" for="fileInput">
+                  <span>↑</span> UserTesting-Export öffnen
+                </label>
+                <input id="fileInput" type="file" accept=".xlsx" multiple hidden />
+                <small class="upload-note">Unterstützt XLSX · Verarbeitung ausschließlich lokal</small>
+              </div>
+              <div class="hero-visual">
+                <div class="floating-card card-a">
+                  <span class="mini-label">TEILNEHMENDE</span><strong>204</strong><em>↑ 18 %</em>
+                </div>
+                <div class="floating-card card-b">
+                  <span class="mini-label">Ø BEWERTUNG</span><strong>8,4</strong>
+                  <div class="spark-bars"><i></i><i></i><i></i><i></i><i></i></div>
+                </div>
+                <div class="orb orb-one"></div>
+                <div class="orb orb-two"></div>
+                <div class="visual-grid"></div>
+              </div>
+            </div>
+            <div class="feature-row">
+              <div><span class="feature-icon">✦</span><strong>Automatisch</strong><p>Fragen, Skalen und Strukturen werden selbstständig erkannt.</p></div>
+              <div><span class="feature-icon">⌁</span><strong>Statistisch</strong><p>Deskriptive Analyse, Kreuztabellen und Korrelationen.</p></div>
+              <div><span class="feature-icon">◉</span><strong>Verständlich</strong><p>Visualisierungen und Themencluster ohne Vorarbeit.</p></div>
+            </div>
+          </div>
+
+          <div class="dashboard hidden" id="dashboard">
+            <div class="dataset-heading">
+              <div>
+                <div class="heading-row">
+                  <span class="type-badge">UMFRAGE</span>
+                  <span class="confidence" id="confidence">98 % sicher erkannt</span>
+                </div>
+                <h2 id="datasetTitle">Datensatz</h2>
+                <p id="datasetMeta">UserTesting Export</p>
+              </div>
+              <label class="secondary-button" for="fileInput">Weitere Studie laden</label>
+              <button class="secondary-button" id="openAiExport">KI-Export</button>
+            </div>
+
+            <div class="kpi-grid" id="kpiGrid"></div>
+
+            <div class="dashboard-grid">
+              <article class="panel wide dashboard-tile" id="demographicPanel" tabindex="0" role="button" aria-label="Stichprobe im Zielgruppen-Explorer untersuchen">
+                <div class="panel-header">
+                  <div><span class="section-kicker">STICHPROBE</span><h3>Teilnehmende im Überblick</h3></div>
+                  <select id="demographicSelect"></select>
+                </div>
+                <div class="chart-frame"><canvas id="demographicChart"></canvas></div>
+              </article>
+              <article class="panel dashboard-tile" id="completionPanel" tabindex="0" role="button" aria-label="Antwortstatus in den Daten öffnen">
+                <div class="panel-header">
+                  <div><span class="section-kicker">QUALITÄT</span><h3>Antwortstatus</h3></div>
+                </div>
+                <div class="donut-layout">
+                  <div class="donut-frame"><canvas id="completionChart"></canvas></div>
+                  <div class="legend-stack" id="completionLegend"></div>
+                </div>
+              </article>
+            </div>
+
+            <article class="panel target-panel dashboard-tile" id="targetPanel" tabindex="0" role="button" aria-label="Zielgruppendaten im Daten-Tab öffnen">
+              <div class="panel-header target-header">
+                <div>
+                  <span class="section-kicker">ZIELGRUPPEN-EXPLORER</span>
+                  <h3>Segmente genauer untersuchen</h3>
+                  <p>Vergleiche Zielgruppen mit vorhandenen demografischen und technischen Merkmalen.</p>
+                </div>
+                <div class="target-controls">
+                  <label>Segment<select id="targetPrimary"></select></label>
+                  <label>Aufschlüsselung<select id="targetSecondary"></select></label>
+                </div>
+              </div>
+              <div class="target-content">
+                <div class="target-chart"><canvas id="targetChart"></canvas></div>
+                <div class="target-table-wrap"><table id="targetTable"></table></div>
+              </div>
+            </article>
+
+            <article class="panel map-panel" id="mapPanel">
+              <div class="panel-header">
+                <div><span class="section-kicker">GEOGRAFISCHE VERTEILUNG</span><h3 id="mapTitle">Teilnehmende nach Ländern und Regionen</h3><p id="mapDescription">Wechsle von der Länderübersicht in die regionale Verteilung eines Landes.</p></div>
+                <label>Ansicht<select id="mapCountry"></select></label>
+              </div>
+              <div class="map-layout">
+                <svg id="regionMap" viewBox="0 0 760 360" aria-label="Karte der Teilnehmerregionen"></svg>
+                <div class="map-legend" id="mapLegend"></div>
+              </div>
+            </article>
+
+            <article class="panel instruction-summary hidden" id="instructionSummary">
+              <div class="panel-header">
+                <div><span class="section-kicker">ANWEISUNGEN</span><h3>Hinweise aus dem Testablauf</h3></div>
+                <span id="instructionCount"></span>
+              </div>
+              <div class="instruction-list" id="instructionList"></div>
+            </article>
+
+            <div class="section-heading">
+              <div><span class="section-kicker">AUTOMATISCHE AUSWERTUNG</span><h3>Fragen & Erkenntnisse</h3></div>
+              <span id="questionCount"></span>
+            </div>
+            <div class="question-grid" id="questionGrid"></div>
+          </div>
+        </section>
+
+        <section class="view" id="dataView">
+          <div class="section-heading data-heading">
+            <div>
+              <span class="section-kicker">DATENEXPLORER</span><h2>Fälle und Variablen</h2>
+              <p id="dataStatus">Wähle links die Spalten, die du untersuchen möchtest.</p>
+            </div>
+            <div class="table-tools">
+              <select id="variableAreaFilter"><option value="">Alle Bereiche</option></select>
+              <input id="variableSearch" type="search" placeholder="Variable suchen …" />
+              <input id="tableSearch" type="search" placeholder="In Fällen suchen …" />
+            </div>
+          </div>
+          <div class="data-layout">
+            <aside class="variable-sidebar">
+              <div class="variable-toolbar">
+                <strong>Spalten</strong>
+                <div><button id="selectDefaultColumns">Standard</button><button id="clearColumns">Leeren</button></div>
+              </div>
+              <div class="variable-list" id="variableList"></div>
+            </aside>
+            <div class="data-table-wrap">
+              <div class="empty-table hidden" id="emptyTable"><span>▦</span><strong>Keine Spalten ausgewählt</strong><p>Wähle links mindestens eine Variable aus.</p></div>
+              <table id="dataTable"></table>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="analysisView">
+          <div class="analysis-intro">
+            <div>
+              <span class="section-kicker">STATISTISCHE ANALYSE</span>
+              <h2 id="analysisHeading">Analyse-Assistent</h2>
+              <p id="analysisDescription">Wähle Daten aus. SPUT entscheidet, welche Auswertung sinnvoll ist, und erklärt das Ergebnis verständlich.</p>
+            </div>
+            <div class="mode-switch" role="group" aria-label="Analysemodus">
+              <button class="active" data-analysis-mode="guided">Geführt</button>
+              <button data-analysis-mode="expert">Expertenmodus</button>
+            </div>
+          </div>
+
+          <div class="analysis-workspace" id="analysisWorkspace">
+            <aside class="data-pool panel">
+              <div class="pool-header"><div><span class="section-kicker">DATENPOOL</span><h3>Verfügbare Daten</h3></div><span id="poolCount"></span></div>
+              <input id="poolSearch" type="search" placeholder="Frage oder Merkmal suchen …" />
+              <div class="pool-groups" id="poolGroups"></div>
+            </aside>
+
+            <div class="guided-analysis" id="guidedAnalysis">
+              <div class="assistant-card panel">
+                <div class="assistant-avatar">✦</div>
+                <div>
+                  <span class="section-kicker">SPUT ASSISTENT</span>
+                  <h3>Was möchtest du herausfinden?</h3>
+                  <p>Du brauchst keine statistische Methode auszuwählen. Markiere links bis zu zwei Datenpunkte.</p>
+                </div>
+                <div class="assistant-goals">
+                  <div class="goal-option"><button class="active" data-goal="relationship">Zusammenhänge verstehen</button><button class="goal-info" data-goal-info="relationship" aria-label="Zusammenhänge verstehen erklären">i</button></div>
+                  <div class="goal-option"><button data-goal="groups">Gruppen vergleichen</button><button class="goal-info" data-goal-info="groups" aria-label="Gruppen vergleichen erklären">i</button></div>
+                  <div class="goal-option"><button data-goal="text">Freitext verstehen</button><button class="goal-info" data-goal-info="text" aria-label="Freitext verstehen erklären">i</button></div>
+                  <div class="goal-option"><button data-goal="overview">Eine Variable beschreiben</button><button class="goal-info" data-goal-info="overview" aria-label="Eine Variable beschreiben erklären">i</button></div>
+                </div>
+                <div class="goal-explanation" id="goalExplanation"></div>
+              </div>
+              <div class="selection-card panel">
+                <div class="panel-header"><div><span class="section-kicker">DEINE AUSWAHL</span><h3>Ausgewählte Daten</h3></div><button class="clear-selection" id="clearAnalysisSelection">Auswahl leeren</button></div>
+                <div class="selection-slots" id="selectionSlots"></div>
+                <div class="assistant-advice" id="assistantAdvice"></div>
+                <div class="analysis-plan" id="analysisPlan"></div>
+                <button class="primary-button assistant-run" id="runGuidedAnalysis">Ergebnis verständlich erklären</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="analysis-builder panel expert-only hidden" id="expertBuilder">
+            <div class="field">
+              <label>Variable A</label><select id="variableX"></select>
+            </div>
+            <div class="relation-symbol">×</div>
+            <div class="field">
+              <label>Variable B <span>(optional)</span></label><select id="variableY"></select>
+            </div>
+            <div class="field method-field">
+              <label>Methode</label>
+              <select id="analysisMethod">
+                <option value="auto">Automatisch</option>
+                <option value="crosstab">Kreuztabelle + Chi-Quadrat</option>
+                <option value="pearson">Pearson-Korrelation</option>
+                <option value="spearman">Spearman-Korrelation</option>
+                <option value="group_compare">t-Test / ANOVA</option>
+                <option value="text_segment">Segmentierte Textanalyse</option>
+              </select>
+            </div>
+            <button class="primary-button compact" id="runAnalysis">Auswerten</button>
+          </div>
+          <div class="compatibility-bar" id="compatibilityBar">
+            <span class="compatibility-dot"></span>
+            <p id="compatibilityText">Nach Auswahl einer Variable zeigt SPUT nur statistisch passende Kombinationen.</p>
+          </div>
+          <div class="analysis-result panel" id="analysisResult">
+            <div class="placeholder-result">
+              <span>⌁</span><h3>Bereit für die Analyse</h3><p>Wähle Variablen aus, um Häufigkeiten, Kreuztabellen oder Korrelationen zu berechnen.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="interactiveView">
+          <div class="interactive-heading">
+            <div>
+              <span class="section-kicker">INTERAKTIVES DASHBOARD</span>
+              <h2>Segmente durch Klicken untersuchen</h2>
+              <p id="interactiveStatus">Klicke auf Antwortoptionen, Gruppen oder Wörter, um die gesamte Studie zu filtern.</p>
+            </div>
+            <div class="interactive-actions">
+              <button class="secondary-button" id="clearInteractiveFilters">Filter leeren</button>
+              <button class="secondary-button" id="loadInteractiveView">Filter laden</button>
+              <button class="primary-button" id="saveInteractiveView">Ansicht speichern</button>
+            </div>
+          </div>
+          <div class="filter-strip" id="interactiveFilters"></div>
+          <div class="interactive-layout">
+            <div class="interactive-grid" id="interactiveGrid"></div>
+            <aside class="interactive-records panel">
+              <div class="panel-header">
+                <div><span class="section-kicker">GEFILTERTE FÄLLE</span><h3 id="filteredRecordTitle">Alle Teilnehmenden</h3></div>
+              </div>
+              <div class="record-list" id="interactiveRecords"></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="studiesView">
+          <div class="studies-heading">
+            <div><span class="section-kicker">STUDIENBIBLIOTHEK</span><h2>Tests laden und kombinieren</h2><p>Lade Varianten desselben Tests aus mehreren Ländern oder Sprachen und analysiere sie gemeinsam.</p></div>
+            <label class="primary-button" for="fileInput">＋ Weitere Exporte laden</label>
+          </div>
+          <div class="study-grid" id="studyGrid">
+            <div class="study-empty"><span>◫</span><h3>Noch keine Studie geladen</h3><p>Importiere einen oder mehrere UserTesting-Exporte.</p></div>
+          </div>
+          <div class="combine-panel panel hidden" id="combinePanel">
+            <div><span class="section-kicker">STUDIENVERGLEICH</span><h3>Ausgewählte Tests kombinieren</h3><p id="combineDescription"></p></div>
+            <div class="combine-actions"><input id="combinedName" value="Internationaler Studienvergleich" /><button class="primary-button" id="combineStudies">Kombinierten Datensatz erstellen</button></div>
+          </div>
+        </section>
+
+        <section class="view help-view" id="helpView">
+          <div class="help-hero">
+            <button class="secondary-button help-back" id="closeHelp">← Zurück zum Dashboard</button>
+            <span class="section-kicker">SPUT-ANLEITUNG</span>
+            <h2>Deine komplette Anleitung für SPUT.</h2>
+            <p>SPUT hilft dir, UserTesting-Excel-Dateien ohne Statistik-Vorkenntnisse zu verstehen. Folge beim ersten Mal einfach den Abschnitten der Reihe nach. Die Inhaltsübersicht links bringt dich jederzeit direkt zu einem Thema.</p>
+          </div>
+          <div class="help-content">
+            <article class="help-section" id="helpStart"><span>01</span><div><h3>Erste Schritte: so startest du eine Auswertung</h3><p><strong>1. Export bereitstellen:</strong> Lade in UserTesting den Umfrageexport als XLSX-Datei herunter. SPUT verarbeitet ausschließlich XLSX-Dateien.</p><p><strong>2. Datei öffnen:</strong> Klicke im leeren Dashboard auf „UserTesting-Export öffnen“ oder unten links auf „Neuer Import“. Du kannst mehrere Dateien nacheinander laden.</p><p><strong>3. Import prüfen:</strong> SPUT öffnet immer zuerst eine Prüfansicht. Schau dir dort vor allem Fragetext, Fragetyp und Antwortoptionen an. Korrigiere bei Bedarf etwas und klicke erst dann auf „Studie mit geprüften Fragen hinzufügen“.</p><div class="help-example"><b>Beispiel:</b> Erkennt SPUT „Wie zufrieden sind Sie?“ als offene Antwort, obwohl die Antworten von 1 bis 5 reichen, stellst du den Typ auf „Bewertungsskala“ um.</div></div></article>
+            <article class="help-section" id="helpImport"><span>02</span><div><h3>Import prüfen: Was SPUT erkennt und was du ändern kannst</h3><p>SPUT erkennt zwei UserTesting-Strukturen: das <strong>neue Einblattformat</strong> mit dem Blatt „Daten“ und das <strong>alte Länderformat</strong>, bei dem Länder in eigenen Blättern stehen. Im oberen Bereich der Import-Prüfung siehst du, welches Format erkannt wurde. Beim Länderformat werden alle Länderblätter automatisch zu einer gemeinsamen Studie verbunden.</p><div class="help-actions"><div><b>Studienname</b><span>Ändere hier den Namen, unter dem die Studie in SPUT erscheint.</span></div><div><b>Häkchen links</b><span>Entferne Fragen oder Hinweise, die nicht ausgewertet werden sollen.</span></div><div><b>Fragetext</b><span>Korrigiere eine gekürzte oder falsch erkannte Frage direkt im Textfeld.</span></div><div><b>Fragetyp</b><span>Wähle z. B. Einfachauswahl, Mehrfachauswahl, Skala, Matrix, Rangfolge, Zahl oder offene Antwort.</span></div><div><b>Pfeil an der Frage</b><span>Öffnet die erkannten Optionen und Antwortbeispiele zur Kontrolle.</span></div></div><p>„Andere“-Antworten behandelt SPUT als Freitext und nicht als feste Auswahloption. Anweisungen im Testablauf werden als Hinweis übernommen, aber nicht statistisch ausgewertet.</p></div></article>
+            <article class="help-section" id="helpDashboard"><span>03</span><div><h3>Dashboard: schneller Überblick über deine Studie</h3><p>Nach dem Import landest du auf dem Dashboard. Es beantwortet zuerst die Frage: <em>Welche Daten habe ich überhaupt?</em></p><div class="help-actions"><div><b>Teilnehmende / Abschlussrate / Testdauer / Fragebogen</b><span>Die vier Kennzahlen oben. Ein Klick führt zu den dazugehörigen Daten.</span></div><div><b>Teilnehmende im Überblick</b><span>Wähle rechts im Auswahlfeld ein demografisches Merkmal, z. B. Alter oder Geschlecht. Das Diagramm zeigt dessen Verteilung.</span></div><div><b>Antwortstatus</b><span>Zeigt vollständige und andere Status aus dem Export.</span></div><div><b>Zielgruppen-Explorer</b><span>Wähle „Segment“ und „Aufschlüsselung“, etwa Zielgruppe nach Alter. Diagramm und Tabelle aktualisieren sich zusammen.</span></div><div><b>Fragen & Erkenntnisse</b><span>Jede Frage ist eine Kachel. Ein Klick öffnet sie direkt im Bereich „Analysieren“.</span></div></div><p><strong>Geografische Verteilung:</strong> Ist im Export ein Land vorhanden, zeigt die Karte zuerst alle Länder samt Teilnehmenden. Wähle im Feld „Ansicht“ ein Land, um dessen Regionen, Punkte auf der Karte und die zugehörigen Fallzahlen zu sehen.</p></div></article>
+            <article class="help-section" id="helpData"><span>04</span><div><h3>Daten: Rohdaten prüfen und gezielt durchsuchen</h3><p>Der Bereich „Daten“ ist dein Tabellen-Explorer. Hier veränderst du keine Excel-Datei; du entscheidest nur, welche Informationen in SPUT sichtbar sind.</p><div class="help-actions"><div><b>Spaltenliste links</b><span>Klicke auf eine Variable, um sie ein- oder auszublenden. Die Häkchen bestimmen die Tabellenspalten.</span></div><div><b>Standard</b><span>Stellt eine sinnvolle Vorauswahl her: Kennung, Status, Zielgruppe, Land, Alter, Geschlecht, Dauer und erste Fragen.</span></div><div><b>Leeren</b><span>Blendet alle Spalten aus, damit du bewusst neu auswählen kannst.</span></div><div><b>Bereich / Variable suchen</b><span>Schränkt die linke Liste nach Themenbereichen oder einem Suchbegriff ein.</span></div><div><b>In Fällen suchen</b><span>Durchsucht die aktuell sichtbaren Spalten nach einer Antwort oder einem Begriff.</span></div></div><div class="help-example"><b>Beispiel:</b> Du möchtest alle Personen finden, die „kompliziert“ geschrieben haben. Blende die betreffende offene Frage ein und suche oben rechts nach „kompliziert“.</div></div></article>
+            <article class="help-section" id="helpAnalysis"><span>05</span><div><h3>Analysieren: von einer Frage zu einer belastbaren Aussage</h3><p>Nutze zuerst den <strong>geführten Modus</strong>. Er ist für Menschen gedacht, die keine statistische Methode auswählen möchten. Wähle links im Datenpool bis zu zwei Datenpunkte und sage SPUT, was du wissen möchtest: Zusammenhänge, Gruppenunterschiede, Freitext oder eine einzelne Beschreibung. SPUT schlägt die passende Auswertung vor und erklärt das Resultat in Alltagssprache.</p><div class="help-actions"><div><b>Eine Variable beschreiben</b><span>Zeigt Verteilungen, Mittelwerte oder eine gemeinsame Frageübersicht.</span></div><div><b>Zusammenhänge verstehen</b><span>Vergleicht zwei passende Merkmale, z. B. Altersgruppe und bevorzugte Option.</span></div><div><b>Gruppen vergleichen</b><span>Vergleicht Zahlenwerte zwischen Gruppen, z. B. Bewertung nach Geschlecht.</span></div><div><b>Freitext verstehen</b><span>Zeigt Themen, häufige Begriffe und alle Originalantworten.</span></div></div><p>Im <strong>Expertenmodus</strong> wählst du Variable A, optional Variable B und die Methode selbst. SPUT lässt nur fachlich passende Kombinationen zu: Kreuztabelle/Chi-Quadrat für Kategorien, Pearson oder Spearman für Zahlen, t-Test/ANOVA für Gruppenvergleiche und segmentierte Textanalyse für Freitext nach Gruppen oder Zahlenbereichen.</p><p>Unter Ergebnissen kannst du Diagramme als PNG exportieren; bei Tabellen-Ergebnissen steht zusätzlich ein CSV-Export bereit.</p></div></article>
+            <article class="help-section" id="helpInteractive"><span>06</span><div><h3>Interaktiv: Segmente durch Klicken erkunden</h3><p>Der Bereich „Interaktiv“ ist für schnelles Entdecken. Jede Kachel steht für eine Variable. Klicke in einem Diagramm auf eine Antwort oder Zahlengruppe; SPUT setzt einen Filter und aktualisiert alle anderen Kacheln sowie die Fallliste rechts.</p><div class="help-actions"><div><b>Kachel anklicken</b><span>Öffnet eine Detailansicht der gesamten Frage. Bei Freitext erscheint die vollständige Liste aller Antworten im aktuellen Segment.</span></div><div><b>Wort-Thema anklicken</b><span>Filtert offene Antworten nach diesem Wort. Das ist eine Suchhilfe, keine inhaltliche KI-Bewertung.</span></div><div><b>Filterleiste</b><span>Zeigt alle aktiven Filter. Klicke auf einen Filter, um nur ihn zu entfernen; „Filter leeren“ setzt alles zurück.</span></div><div><b>− auf einer Kachel</b><span>Blendet die Kachel nur aus der aktuellen Ansicht aus.</span></div><div><b>Ansicht speichern / laden</b><span>Speichert oder stellt Filter und ausgeblendete Kacheln wieder her.</span></div></div><div class="help-example"><b>Beispiel:</b> Klicke zuerst auf „18–24“ bei Alter und danach auf eine Antwortoption. Rechts siehst du nur noch die passenden Fälle; alle Kacheln zeigen nun genau dieses Segment.</div></div></article>
+            <article class="help-section" id="helpStudies"><span>07</span><div><h3>Studien: mehrere Exporte verwalten und vergleichen</h3><p>Hier siehst du alle geladenen Exporte als Karten. Mit „Weitere Exporte laden“ fügst du Länder-, Sprach- oder Wiederholungsvarianten hinzu.</p><div class="help-actions"><div><b>Öffnen →</b><span>Macht diese Studie zur aktuell aktiven Studie in Dashboard, Daten, Analyse und Interaktiv.</span></div><div><b>Fragen prüfen</b><span>Öffnet die Import-Prüfung erneut, falls du Fragetypen oder Optionen nachträglich korrigieren möchtest.</span></div><div><b>Karte anklicken</b><span>Markiert eine Studie für den Vergleich. Markiere mindestens zwei Karten.</span></div><div><b>Kombinierten Datensatz erstellen</b><span>Verbindet die markierten Studien. Gib vorher einen Namen ein. Die Herkunft jedes Falls bleibt als zusätzliche Variable erhalten.</span></div></div><p>Vergleiche und kombiniere nur Exporte, die dieselbe oder sehr ähnliche Befragung enthalten. Prüfe bei Sprachvarianten insbesondere die Fragezuordnung und Antwortoptionen.</p></div></article>
+            <article class="help-section" id="helpExport"><span>08</span><div><h3>KI-Export: Daten vorbereitet weitergeben</h3><p>Im Dashboard öffnet „KI-Export“ einen Dialog für einen strukturierten JSON-Datensatz und einen kompakten Markdown-Prompt. Beide Dateien werden erst erzeugt, wenn du einen Export-Knopf drückst.</p><div class="help-actions"><div><b>Dateiname</b><span>Bestimmt den Namen der Exportdatei.</span></div><div><b>Antwortsprache & Analyse-Stil</b><span>Steuern die Anweisung im mitgelieferten Prompt.</span></div><div><b>Feste KI-Fragen</b><span>Formuliere konkrete Fragen, die ein anderes KI-Tool beantworten soll.</span></div><div><b>Datenschutz</b><span>„Vollständig“ enthält Rohdaten; „Freitexte kürzen“ begrenzt Freitexte; „Nur Zusammenfassungen“ enthält keine Rohdaten.</span></div><div><b>Markdown / JSON</b><span>Markdown ist ein kompakter Prompt-Begleiter. JSON enthält zusätzlich Datenwörterbuch, Fragebogen, Zusammenfassungen und – je nach Modus – Rohdaten.</span></div></div><p>Prüfe vor einem externen Upload immer, ob personenbezogene oder vertrauliche Inhalte enthalten sind und welcher Datenschutzmodus passend ist.</p></div></article>
+            <article class="help-section" id="helpSettings"><span>09</span><div><h3>Einstellungen: Oberfläche und gespeicherte Ansichten</h3><p>Unten links öffnet das Zahnrad die Einstellungen. Der <strong>Dark Mode</strong> passt die Oberfläche für dunkle Arbeitsumgebungen an. Die Einstellung wird lokal im Browser gemerkt.</p><p>Unter <strong>Sicherung von Filteransichten</strong> wählst du, wo gespeicherte interaktive Ansichten liegen: „Intern“ legt sie im SPUT-Ordner unter <code>.saved-views</code> ab; „Dateimodus“ speichert beziehungsweise lädt eine JSON-Datei über einen Dateidialog oder Browser-Download. Gespeicherte Ansichten enthalten Filter und ausgeblendete Kacheln, nicht erneut kopierte Studiendaten.</p></div></article>
+            <article class="help-section" id="helpLimits"><span>10</span><div><h3>Ergebnisse richtig interpretieren</h3><p>SPUT hilft dir bei der Auswertung, ersetzt aber nicht die inhaltliche Prüfung. Eine auffällige Verteilung zeigt zunächst nur ein Muster – keine Ursache. Bei kleinen Gruppen sind Prozentwerte besonders instabil.</p><p><strong>Freitext:</strong> Häufige Wörter sind ein Einstieg, keine vollständige Interpretation. Die Erkennung kann Fehler enthalten und versteht Kontext, Synonyme, Verneinungen und Ironie nicht zuverlässig. Lies deshalb immer die Originalantworten daneben.</p><p><strong>Statistische Tests:</strong> Ein p-Wert unter 0,05 ist ein Hinweis auf ein statistisch auffälliges Muster, nicht auf Wichtigkeit oder Kausalität. Beachte immer Fallzahl, Effektstärke, fehlende Werte und die Forschungsfrage.</p></div></article>
+            <article class="help-section" id="helpMaintenance"><span>11</span><div><h3>Diese Anleitung aktuell halten</h3><p>Die Anleitung ist als fester Teil von SPUT angelegt. Jede neue Seite, Funktion, Schaltfläche oder Exportoption wird bei ihrer Umsetzung mit einem eigenen Abschnitt oder einer Ergänzung in dieser Anleitung dokumentiert. So bleibt sie auch für neue Nutzerinnen und Nutzer der verlässliche Einstiegspunkt.</p><p>Wenn dir an einer Stelle eine Erklärung fehlt, nutze das Fragezeichen als Ausgangspunkt und ergänze die konkrete Funktion in diesem Inhaltsverzeichnis – nicht nur in einem technischen Änderungsprotokoll.</p></div></article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="loading-overlay hidden" id="loadingOverlay">
+      <div class="loader"></div><strong>Export wird verstanden …</strong><span>Struktur und Fragetypen werden rekonstruiert.</span>
+    </div>
+    <input id="externalViewInput" type="file" accept=".json" hidden />
+    <div class="review-overlay hidden" id="reviewOverlay">
+      <div class="review-dialog">
+        <header class="review-header">
+          <div><span class="section-kicker">IMPORT PRÜFEN</span><h2>Hat SPUT den Fragebogen richtig erkannt?</h2><p>Kontrolliere Fragen, Antwortoptionen und Fragetypen. Erst danach wird die Studie hinzugefügt.</p></div>
+          <div class="review-summary" id="reviewSummary"></div>
+        </header>
+        <div class="review-settings">
+          <label>Studienname<input id="reviewStudyName" /></label>
+          <div class="review-legend"><span>✓ Frage übernehmen</span><span>Typ und Text sind editierbar</span></div>
+        </div>
+        <div class="review-questions" id="reviewQuestions"></div>
+        <footer class="review-footer">
+          <button class="secondary-button" id="cancelReview">Import abbrechen</button>
+          <button class="primary-button" id="confirmReview">Studie mit geprüften Fragen hinzufügen</button>
+        </footer>
+      </div>
+    </div>
+    <div class="modal-overlay hidden" id="interactiveDetailOverlay" role="dialog" aria-modal="true" aria-labelledby="interactiveDetailTitle">
+      <div class="modal-dialog interactive-detail-dialog">
+        <header class="modal-header">
+          <div><span class="section-kicker">DETAILANSICHT</span><h2 id="interactiveDetailTitle">Frage</h2><p id="interactiveDetailMeta"></p></div>
+          <button class="modal-close" id="closeInteractiveDetail" aria-label="Schließen">×</button>
+        </header>
+        <div class="modal-body interactive-detail-body" id="interactiveDetailBody"></div>
+      </div>
+    </div>
+    <div class="modal-overlay hidden" id="aiExportOverlay">
+      <div class="modal-dialog ai-dialog">
+        <header class="modal-header">
+          <div><span class="section-kicker">KI-EXPORT</span><h2>Datensatz für generative KI vorbereiten</h2><p>Die Datei enthält Schema, Rohdaten, Zusammenfassungen und einen direkt nutzbaren Prompt.</p></div>
+          <button class="modal-close" id="closeAiExport" aria-label="Schließen">×</button>
+        </header>
+        <div class="modal-body ai-export-grid">
+          <label>Dateiname<input id="aiExportName" /></label>
+          <label>Antwortsprache<select id="aiPromptLanguage"><option>Deutsch</option><option>Englisch</option></select></label>
+          <label>Analyse-Stil<select id="aiPromptStyle"><option>Kritischer Research Report</option><option>Management Summary</option><option>Ausführliche Musteranalyse</option><option>Hypothesen und nächste Schritte</option></select></label>
+          <label>Datenschutz<select id="aiPrivacyMode"><option value="full">Vollständige Rohdaten</option><option value="reduced">Freitexte kürzen</option><option value="summary">Nur Zusammenfassungen und Beispiele</option></select></label>
+          <label class="full">Feste KI-Fragen<textarea id="aiPromptQuestions" rows="6"></textarea></label>
+          <label class="full">Zusätzliche Prompt-Anweisung<textarea id="aiPromptExtra" rows="4" placeholder="Optional"></textarea></label>
+        </div>
+        <footer class="modal-footer">
+          <button class="secondary-button" id="downloadAiMarkdown">Prompt als Markdown</button>
+          <button class="primary-button" id="downloadAiJson">KI-Datensatz als JSON</button>
+        </footer>
+      </div>
+    </div>
+    <div class="modal-overlay hidden" id="saveViewOverlay">
+      <div class="modal-dialog save-dialog">
+        <header class="modal-header">
+          <div><span class="section-kicker">ANSICHT SPEICHERN</span><h2>Gefiltertes Segment exportieren</h2><p>Der vorgeschlagene Name basiert auf deiner aktuellen Auswahl.</p></div>
+          <button class="modal-close" id="closeSaveView" aria-label="Schließen">×</button>
+        </header>
+        <div class="modal-body">
+          <label>Name der Ansicht<input id="savedViewName" /></label>
+          <label>Format<select id="savedViewFormat"><option value="json">JSON-Ansicht mit Filtern und ausgeblendeten Kacheln</option></select></label>
+        </div>
+        <footer class="modal-footer">
+          <button class="secondary-button" id="cancelSaveView">Abbrechen</button>
+          <button class="primary-button" id="confirmSaveView">Speichern</button>
+        </footer>
+      </div>
+    </div>
+    <div class="modal-overlay hidden" id="loadViewOverlay">
+      <div class="modal-dialog load-dialog">
+        <header class="modal-header">
+          <div><span class="section-kicker">FILTER LADEN</span><h2>Gespeicherte Ansichten</h2><p>Wähle eine Ansicht aus dem internen Speicher.</p></div>
+          <button class="modal-close" id="closeLoadView" aria-label="Schließen">×</button>
+        </header>
+        <div class="modal-body">
+          <div class="saved-view-list" id="savedViewList"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-overlay hidden" id="settingsOverlay">
+      <div class="modal-dialog settings-dialog">
+        <header class="modal-header">
+          <div><span class="section-kicker">EINSTELLUNGEN</span><h2>Allgemeine Einstellungen</h2><p>Diese Einstellungen werden lokal in diesem Browser gespeichert.</p></div>
+          <button class="modal-close" id="closeSettings" aria-label="Schließen">×</button>
+        </header>
+        <div class="modal-body">
+          <div class="settings-row">
+            <div><strong>Dark Mode</strong><p>Dunklere Oberfläche für spätes Arbeiten.</p></div>
+            <label class="ios-switch" aria-label="Dark Mode">
+              <input id="themeMode" type="checkbox" />
+              <span></span>
+            </label>
+          </div>
+          <label>Sicherung von Filteransichten<select id="viewStorageMode"><option value="internal">Intern im SPUT-Ordner speichern</option><option value="external">Datei per Finder auswählen</option></select></label>
+          <div class="settings-note">
+            <strong>Interner Speicher</strong>
+            <p>Ansichten werden im Projektordner unter .saved-views abgelegt und erscheinen im Filter-laden-Dialog.</p>
+          </div>
+          <div class="settings-note">
+            <strong>Dateimodus</strong>
+            <p>SPUT nutzt den Browser-Dateidialog, wenn verfügbar. Sonst wird gespeichert als Download und geladen über Dateiauswahl.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="toast hidden" id="toast"></div>
+
+    <script src="/vendor/chart.js/chart.umd.js"></script>
+    <script src="/vendor/d3/d3.min.js"></script>
+    <script src="/vendor/topojson/topojson-client.min.js"></script>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
