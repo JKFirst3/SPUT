@@ -1,4 +1,5 @@
 import { ApiClient } from "./core/api-client.js";
+import { AnalysisNavigator } from "./core/analysis-navigator.js";
 import { ProjectManager } from "./core/project-manager.js";
 
 const PRIMARY = "#3b5bf4";
@@ -38,6 +39,7 @@ const state = {
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
+const analysisNavigator = new AnalysisNavigator(state);
 
 Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif";
 
@@ -770,11 +772,8 @@ function openQuestionAnalysis(question) {
     return;
   }
   const variable = state.variables.find((candidate) => candidate.questionId === question.id);
+  if (analysisNavigator.selectQuestion(variable, variable ? poolCategory(variable) : "")) setAnalysisMode("guided");
   changeView("analysis");
-  if (variable) {
-    $("#variableX").value = variable.id;
-    updateCompatibleVariables();
-  }
 }
 
 function selectDefaultColumns() {

@@ -9,6 +9,7 @@ import { DatasetStore } from "../server/dataset-store.js";
 import { ExportService } from "../server/export-service.js";
 import { ProjectRepository } from "../server/project-repository.js";
 import { TextAnalysisService } from "../server/text-analysis-service.js";
+import { AnalysisNavigator } from "../public/core/analysis-navigator.js";
 
 const question = { id: "q1", number: 1, position: 1, displayCode: "Q1", prompt: "", label: "Was gefällt?", type: "single_choice", columns: [{ key: "c1", label: "Antwort" }] };
 const dataset = (name, values) => ({ name, fileName: `${name}.xlsx`, participants: values.length, complete: values.length, completionRate: 1, countries: ["DE"], metadata: [], questions: [question], records: values.map((value) => ({ c1: value })), schema: { format: "Test" } });
@@ -64,4 +65,16 @@ test("application exposes the semantic version from package.json", async () => {
   const packageInfo = JSON.parse(await fs.readFile(new URL("../package.json", import.meta.url), "utf8"));
   assert.match(APP_VERSION, /^\d+\.\d+\.\d+$/);
   assert.equal(APP_VERSION, packageInfo.version);
+});
+
+test("dashboard navigation preselects the clicked question in guided analysis", () => {
+  const state = { analysisSelection: [], analysisGoal: "relationship", openPoolGroups: new Set() };
+  const navigator = new AnalysisNavigator(state);
+  assert.equal(navigator.selectQuestion({ id: "q7", kind: "categorical" }, "Auswahlfragen"), true);
+  assert.deepEqual(state.analysisSelection, ["q7"]);
+  assert.equal(state.analysisGoal, "overview");
+  assert.ok(state.openPoolGroups.has("Auswahlfragen"));
+  navigator.selectQuestion({ id: "q8", kind: "text" }, "Offene Antworten");
+  assert.deepEqual(state.analysisSelection, ["q8"]);
+  assert.equal(state.analysisGoal, "text");
 });
