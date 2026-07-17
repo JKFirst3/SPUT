@@ -10,6 +10,7 @@ import { ExportService } from "../server/export-service.js";
 import { ProjectRepository } from "../server/project-repository.js";
 import { TextAnalysisService } from "../server/text-analysis-service.js";
 import { AnalysisNavigator } from "../public/core/analysis-navigator.js";
+import { designTheme, normalizeDesignTheme } from "../public/core/design-themes.js";
 import { parseUserTestingExport } from "../server/parser.js";
 
 const question = { id: "q1", number: 1, position: 1, displayCode: "Q1", prompt: "", label: "Was gefällt?", type: "single_choice", columns: [{ key: "c1", label: "Antwort" }] };
@@ -100,4 +101,12 @@ test("small current-format samples still recognize evidence-backed free text", a
   await workbook.xlsx.writeFile(file);
   const parsed = await parseUserTestingExport(file, "small-open-text.xlsx");
   assert.equal(parsed.questions[0].type, "text");
+});
+
+test("GUI designs expose stable classic and official Miele palettes", () => {
+  assert.equal(normalizeDesignTheme("unknown"), "classic");
+  assert.equal(normalizeDesignTheme("miele"), "miele");
+  assert.equal(designTheme("miele").primary, "#8c0014");
+  assert.ok(designTheme("miele").chartColors.includes("#f59b00"));
+  assert.equal(designTheme("classic").primary, "#3b5bf4");
 });

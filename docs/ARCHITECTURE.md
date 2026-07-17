@@ -22,6 +22,11 @@ SPUT verarbeitet UserTesting-XLSX-Exporte lokal. Die Architektur trennt Datenimp
 - `TermGraph`: Adjazenzstruktur und Tiefensuche für verbundene Begriffskomponenten.
 - `UpdateService`: passive, vom Nutzer ausgelöste Prüfung veröffentlichter GitHub-Releases.
 - `ApiClient` und `ProjectManager`: Browserzugriff und Projektablauf ohne verteilte Fetch-Details.
+- `design-themes.js`: zentrale, getestete Diagrammpaletten und Normalisierung für die klassische und die Miele-GUI; CSS-Design-Tokens übernehmen die vollständige Oberflächengestaltung.
+
+## Oberflächendesigns
+
+`data-gui="classic|miele"` am Wurzelelement wählt das Designsystem, `data-theme="light|dark"` bleibt davon unabhängig. Dadurch stehen klassisches und Miele-Design jeweils in heller und dunkler Darstellung zur Verfügung. Die Auswahl wird ausschließlich lokal unter `sput.guiDesign` gespeichert. Das Miele-Logo liegt als lokales PNG unter `public/assets`; es wird nur im Miele-Modus eingeblendet und verursacht keine externe Anfrage.
 
 ## Projekt und Ansicht
 

@@ -1,10 +1,11 @@
 import { ApiClient } from "./core/api-client.js";
 import { AnalysisNavigator } from "./core/analysis-navigator.js";
+import { designTheme, normalizeDesignTheme } from "./core/design-themes.js";
 import { ProjectManager } from "./core/project-manager.js";
 
-const PRIMARY = "#3b5bf4";
-const PRIMARY_RGBA = "rgba(59,91,244,.68)";
-const colors = ["#3b5bf4", "#8193f9", "#8b5cf6", "#28b982", "#f4a261", "#e76f8a", "#64748b", "#14b8a6"];
+let PRIMARY = "#3b5bf4";
+let PRIMARY_RGBA = "rgba(59,91,244,.68)";
+let colors = ["#3b5bf4", "#8193f9", "#8b5cf6", "#28b982", "#f4a261", "#e76f8a", "#64748b", "#14b8a6"];
 
 const state = {
   datasetId: null,
@@ -34,6 +35,7 @@ const state = {
     viewStorageMode: localStorage.getItem("sput.viewStorageMode") || "internal",
     sidebarWidth: Number(localStorage.getItem("sput.sidebarWidth")) || 244,
     themeMode: localStorage.getItem("sput.themeMode") || "light",
+    guiDesign: normalizeDesignTheme(localStorage.getItem("sput.guiDesign")),
   },
 };
 
@@ -41,15 +43,39 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const analysisNavigator = new AnalysisNavigator(state);
 
-Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif";
+function updateChartDefaults() {
+  const miele = state.settings.guiDesign === "miele";
+  Chart.defaults.font.family = miele
+    ? "Arial, 'Helvetica Neue', sans-serif"
+    : "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif";
+  Chart.defaults.color = state.settings.themeMode === "dark" ? (miele ? "#d5d2cc" : "#aeb8ca") : (miele ? "#665f57" : "#7a8595");
+  Chart.defaults.borderColor = state.settings.themeMode === "dark" ? (miele ? "#4a4540" : "#263245") : (miele ? "#d5d2cc" : "#edf0f5");
+}
+
+function applyGuiDesign(value, rerender = false) {
+  const design = normalizeDesignTheme(value);
+  const palette = designTheme(design);
+  state.settings.guiDesign = design;
+  PRIMARY = palette.primary;
+  PRIMARY_RGBA = palette.primaryRgba;
+  colors = [...palette.chartColors];
+  document.documentElement.dataset.gui = design;
+  localStorage.setItem("sput.guiDesign", design);
+  $$('[data-gui-design]').forEach((button) => {
+    const active = button.dataset.guiDesign === design;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  updateChartDefaults();
+  if (rerender && state.dataset) renderApplication();
+}
 
 function applyTheme(mode, rerender = false) {
   const theme = mode === "dark" ? "dark" : "light";
   state.settings.themeMode = theme;
   document.documentElement.dataset.theme = theme;
   localStorage.setItem("sput.themeMode", theme);
-  Chart.defaults.color = theme === "dark" ? "#aeb8ca" : "#7a8595";
-  Chart.defaults.borderColor = theme === "dark" ? "#263245" : "#edf0f5";
+  updateChartDefaults();
   if (!rerender || !state.dataset) return;
   const activeView = $(".view.active")?.id?.replace("View", "") ?? "dashboard";
   renderApplication();
@@ -1512,6 +1538,11 @@ async function loadExternalView() {
 function openSettingsDialog() {
   $("#viewStorageMode").value = state.settings.viewStorageMode;
   $("#themeMode").checked = state.settings.themeMode === "dark";
+  $$('[data-gui-design]').forEach((button) => {
+    const active = button.dataset.guiDesign === state.settings.guiDesign;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
   $("#settingsOverlay").classList.remove("hidden");
 }
 
@@ -2430,6 +2461,7 @@ function closeHelp() {
   if ($("#helpView").classList.contains("active")) changeView("dashboard");
 }
 
+applyGuiDesign(state.settings.guiDesign);
 applyTheme(state.settings.themeMode);
 initSidebarResize();
 $("#fileInput").addEventListener("change", (event) => importFiles(event.target.files));
@@ -2467,6 +2499,7 @@ $("#openSettings").addEventListener("click", openSettingsDialog);
 $("#closeSettings").addEventListener("click", closeSettingsDialog);
 $("#viewStorageMode").addEventListener("change", (event) => updateStorageMode(event.target.value));
 $("#themeMode").addEventListener("change", (event) => updateThemeMode(event.target.checked));
+$$('[data-gui-design]').forEach((button) => button.addEventListener("click", () => applyGuiDesign(button.dataset.guiDesign, true)));
 $("#externalViewInput").addEventListener("change", async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
