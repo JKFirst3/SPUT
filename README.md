@@ -2,6 +2,8 @@
 
 **Statistical Package for User Testing** ist ein lokales Analysewerkzeug für UserTesting-Exporte.
 
+Aktuelle Version: **1.0.0**. Die Versionsregeln stehen in [docs/VERSIONING.md](docs/VERSIONING.md), die technische Struktur in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ## Start
 
 Am einfachsten auf dem Mac:
@@ -60,9 +62,23 @@ Danach läuft SPUT unter [http://localhost:4173](http://localhost:4173).
 - separater Expertenmodus mit direkter Auswahl der statistischen Methode
 - kategorisierter Datenpool für Durchführung, Zielgruppe, Auswahlfragen, Skalen und Freitext
 - Studienbibliothek zum Laden und Kombinieren mehrerer Länder-/Sprachvarianten desselben Tests
+- dauerhafte Projektverwaltung: vollständige Studien speichern und nach einem Neustart wieder öffnen
+- direkter Studienvergleich gemeinsamer Fragen, ohne die Quelldatensätze zu verändern
 - Herkunftsvariable pro Fall bei kombinierten Datensätzen
 - verständliche Interpretationshinweise zu Tests, p-Werten und Effektstärken
 - PNG-Export erzeugter Diagramme und CSV-Export tabellarischer Testergebnisse
+- vollständiger Excel-Export mit Übersicht, Fragebogen und Rohdaten
+- eigenständiger, druckbarer HTML-Ergebnisbericht zum Teilen oder als PDF-Druck
+- nachvollziehbare Freitext-Themen über einen Begriff-Kookkurrenzgraphen mit Abdeckung und Originalbelegen
+- manuell ausgelöste Update-Prüfung gegen veröffentlichte GitHub-Releases
 - rein lokale Verarbeitung
+
+## Projekte, Ansichten und Vergleiche
+
+Ein Projekt speichert alle geladenen Studien vollständig unter `.projects`. Eine interaktive Ansicht speichert dagegen nur Filter und ausgeblendete Kacheln unter `.saved-views`. Beim Direktvergleich bleiben Studien getrennt; „Kombinieren“ erstellt bewusst einen zusätzlichen gemeinsamen Datensatz mit Herkunftsvariable.
+
+## Updates
+
+Unter Einstellungen kann SPUT nach einem neuen GitHub-Release suchen. Es installiert niemals ungefragt Code. Solange das Repository privat ist oder noch kein Release besitzt, meldet die Prüfung, dass keine öffentliche Version verfügbar ist. Eine neue Version wird erst nach Tests als GitHub-Release veröffentlicht.
 
 Andere UserTesting-Testarten sind im Datenmodell vorgesehen, werden in dieser Version aber noch nicht ausgewertet.

@@ -1,10 +1,9 @@
 import * as ss from "simple-statistics";
 import jStat from "jstat";
 import { isNonEmpty, toNumber, valueForQuestion } from "./parser.js";
+import { TextAnalysisService } from "./text-analysis-service.js";
 
-const STOPWORDS = new Set(
-  "aber alle als also am an auch auf aus bei bin bis bist da dadurch daher darum das dass dein deine dem den der des die dies diese doch dort du durch ein eine einer eines er es für hat hier ich im in ist ja kann kein keine mit muss nach nicht noch nun oder ohne sehr sein sind so über um und uns von vor war was weil wenn werden wie wieder wir wird wo zu zum zur the a an and are as at be because been but by can could did do does for from had has have how i if in into is it its may more most my no not of on one or our should so than that the their them then there they this to too up very was we were what when where which who why will with would you your".split(/\s+/),
-);
+const textAnalyzer = new TextAnalysisService();
 
 function analysisNumber(value) {
   const direct = toNumber(value);
@@ -47,13 +46,7 @@ function numericSummary(values) {
 }
 
 function tokenize(value) {
-  return (
-    String(value)
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .match(/[a-zäöüß]{4,}/gi) ?? []
-  ).filter((candidate) => !STOPWORDS.has(candidate));
+  return textAnalyzer.tokenize(value);
 }
 
 function themes(values, limit = 12) {
@@ -68,14 +61,7 @@ function themes(values, limit = 12) {
 }
 
 function textOverview(values) {
-  const valid = values.filter(isNonEmpty).map(String);
-  const wordCounts = valid.map((value) => tokenize(value).length);
-  return {
-    n: valid.length,
-    themes: themes(valid, 15),
-    answers: valid,
-    averageWords: wordCounts.length ? ss.mean(wordCounts) : 0,
-  };
+  return textAnalyzer.analyze(values, 15);
 }
 
 export function summarizeQuestion(dataset, question) {

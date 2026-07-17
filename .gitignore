@@ -1,6 +1,7 @@
 node_modules/
 .uploads/
 .saved-views/
+.projects/
 .sput.log
 .DS_Store
 npm-debug.log*

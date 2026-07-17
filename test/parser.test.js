@@ -205,3 +205,19 @@ test("compares multiple-choice selections with demographics and other questions"
   assert.ok(questionPair.matrix.flat().some((value) => value > 0));
   assert.ok(questionPair.associations.length > 0);
 });
+
+test("detects both supplied current and legacy multi-country exports", async () => {
+  const legacy = await parseUserTestingExport(
+    "/Users/jkploch/Downloads/202505_Zusammenstellung_Usertesting_Voice_Akzeptanz_RAW 1 1.xlsx",
+    "legacy.xlsx",
+  );
+  const current = await parseUserTestingExport(
+    "/Users/jkploch/Downloads/User-Testing_Test-data_250515_voice_commands_in_household_appliances 1 1.xlsx",
+    "current.xlsx",
+  );
+  assert.equal(legacy.schema.mode, "legacy_multisheet");
+  assert.equal(current.schema.mode, "current_single_sheet");
+  assert.equal(legacy.countries.length, 6);
+  assert.ok(legacy.participants > current.participants);
+  assert.equal(legacy.questions.length, current.questions.length);
+});

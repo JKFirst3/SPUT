@@ -1,3 +1,6 @@
+import { ApiClient } from "./core/api-client.js";
+import { ProjectManager } from "./core/project-manager.js";
+
 const PRIMARY = "#3b5bf4";
 const PRIMARY_RGBA = "rgba(59,91,244,.68)";
 const colors = ["#3b5bf4", "#8193f9", "#8b5cf6", "#28b982", "#f4a261", "#e76f8a", "#64748b", "#14b8a6"];
@@ -15,6 +18,7 @@ const state = {
   currentAnalysis: null,
   studies: [],
   selectedStudies: new Set(),
+  project: null,
   analysisSelection: [],
   analysisGoal: "relationship",
   analysisMode: "guided",
@@ -1885,7 +1889,7 @@ function renderStudies() {
     .join("");
   $$(".study-card").forEach((card) => {
     card.onclick = (event) => {
-      if (event.target.closest("[data-open-study]")) return;
+      if (event.target.closest("[data-open-study], [data-review-study]")) return;
       if (state.selectedStudies.has(card.dataset.studyId)) state.selectedStudies.delete(card.dataset.studyId);
       else state.selectedStudies.add(card.dataset.studyId);
       renderStudies();
@@ -1914,11 +1918,78 @@ function renderStudies() {
     };
   });
   const selected = state.studies.filter((study) => state.selectedStudies.has(study.id));
+  $("#projectTitle").textContent = state.project?.name ?? "Nicht gespeichertes Projekt";
+  if (state.project && !$("#projectName").value) $("#projectName").value = state.project.name;
   $("#combinePanel").classList.toggle("hidden", selected.length < 2);
   $("#combineDescription").textContent =
     selected.length >= 2
       ? `${selected.length} Studien mit insgesamt ${selected.reduce((sum, study) => sum + study.dataset.participants, 0)} Teilnehmenden werden über gleiche Fragen und Merkmale verbunden.`
       : "";
+}
+
+const api = new ApiClient();
+const projectManager = new ProjectManager(api, state, activateStudy);
+
+async function saveProject() {
+  if (!state.studies.length) return toast("Bitte zuerst mindestens eine Studie importieren.");
+  const name = $("#projectName").value.trim() || state.project?.name || state.dataset?.name || "SPUT Projekt";
+  try {
+    await projectManager.save(name);
+    renderStudies();
+    toast(`Projekt „${name}“ wurde vollständig gespeichert.`);
+  } catch (error) { toast(error.message); }
+}
+
+async function openProjectDialog() {
+  try {
+    const { projects } = await api.get("/api/projects");
+    $("#projectList").innerHTML = projects.length ? projects.map((project) => `<button class="saved-view-entry" data-project-id="${project.id}"><span><strong>${escapeHtml(project.name)}</strong><small>${project.studyCount} Studien · ${project.participantCount} Teilnehmende</small></span><small>${new Date(project.updatedAt).toLocaleString("de-DE")}</small></button>`).join("") : '<p class="empty-analysis">Noch kein Projekt gespeichert.</p>';
+    $$("[data-project-id]").forEach((button) => button.onclick = async () => {
+      try {
+        await projectManager.open(button.dataset.projectId);
+        $("#projectName").value = state.project.name;
+        $("#projectOverlay").classList.add("hidden");
+        renderStudies();
+        toast(`Projekt „${state.project.name}“ wurde geöffnet.`);
+      } catch (error) { toast(error.message); }
+    });
+    $("#projectOverlay").classList.remove("hidden");
+  } catch (error) { toast(error.message); }
+}
+
+async function compareSelectedStudies() {
+  try {
+    const comparison = await api.post("/api/compare", { ids: [...state.selectedStudies] });
+    $("#comparisonSummary").textContent = `${comparison.studies.length} Studien · ${comparison.questions.length} eindeutig zugeordnete gemeinsame Fragen${comparison.unmatchedQuestionCount ? ` · ${comparison.unmatchedQuestionCount} nicht zugeordnete Fragevorkommen` : ""}`;
+    $("#comparisonBody").innerHTML = comparison.questions.length ? comparison.questions.map((question) => {
+      const labels = [...new Set(question.studies.flatMap((study) => (study.summary.distribution ?? []).slice(0, 8).map((item) => item.label)))];
+      return `<article class="comparison-question"><h3>${escapeHtml(question.displayCode)} · ${escapeHtml(question.label)}</h3>${labels.length ? `<div class="comparison-table-wrap"><table><thead><tr><th>Antwort</th>${question.studies.map((study) => `<th>${escapeHtml(study.name)}</th>`).join("")}</tr></thead><tbody>${labels.map((label) => `<tr><td>${escapeHtml(label)}</td>${question.studies.map((study) => `<td>${study.summary.distribution?.find((item) => item.label === label)?.count ?? 0}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : `<p>Komplexe oder offene Frage: in den jeweiligen Studien über „Öffnen“ im Detail prüfen.</p>`}</article>`;
+    }).join("") : '<p class="empty-analysis">Es konnten keine gemeinsamen Fragen eindeutig zugeordnet werden. Prüfe Fragetexte und Reihenfolge in der Importprüfung.</p>';
+    $("#comparisonOverlay").classList.remove("hidden");
+  } catch (error) { toast(error.message); }
+}
+
+function downloadDatasetExport(kind) {
+  if (!state.datasetId) return toast("Bitte zuerst eine Studie laden.");
+  window.location.href = `/api/datasets/${encodeURIComponent(state.datasetId)}/${kind === "xlsx" ? "export.xlsx" : "report.html"}`;
+}
+
+async function checkForUpdates() {
+  const button = $("#checkUpdates");
+  button.disabled = true;
+  $("#updateStatus").textContent = "GitHub-Version wird geprüft …";
+  try {
+    const result = await api.get("/api/updates/check");
+    $("#updateStatus").innerHTML = result.url && result.available ? `${escapeHtml(result.message)} <a href="${escapeHtml(result.url)}" target="_blank" rel="noreferrer">Release öffnen</a>` : escapeHtml(result.message);
+  } catch (error) { $("#updateStatus").textContent = error.message; }
+  finally { button.disabled = false; }
+}
+
+async function loadVersion() {
+  try {
+    const { version } = await api.get("/api/version");
+    $$('[data-app-version]').forEach((element) => { element.textContent = version; });
+  } catch { /* The static version remains visible if the local API is unavailable. */ }
 }
 
 async function combineSelectedStudies() {
@@ -2136,6 +2207,7 @@ function renderAnalysisResult(result) {
         <div class="stat-card"><span>Ø relevante Wörter</span><strong>${result.averageWords.toFixed(1)}</strong><small>pro Antwort</small></div>
         <div class="stat-card"><span>Schlüsselbegriffe</span><strong>${result.themes.length}</strong><small>im Diagramm</small></div>
       </div>
+      ${result.topics?.length ? `<h4 class="result-subheading">Nachvollziehbare Themenverbindungen</h4><p class="text-analysis-caution">Themen entstehen aus wiederholt gemeinsam genannten Begriffen. Abdeckung und Belege machen jede Zuordnung prüfbar; sie ist keine fehlerfreie Bedeutungsanalyse.</p><div class="topic-grid">${result.topics.map((topic) => `<article class="topic-card"><div><strong>${escapeHtml(topic.label)}</strong><span>${(topic.coverage * 100).toFixed(0)} % Abdeckung · ${topic.count} Antworten</span></div><p>${escapeHtml(shortened(topic.evidence[0] ?? "", 220))}</p></article>`).join("")}</div>` : ""}
       <div class="text-overview-grid">
         <div><h4 class="result-subheading">Häufige Begriffe</h4><p class="text-analysis-caution">Hinweis: Die automatische Wortanalyse kann Fehler enthalten und erkennt weder Kontext, Synonyme, Verneinungen noch Ironie zuverlässig.</p><div class="analysis-chart"><canvas></canvas></div></div>
         <div><h4 class="result-subheading">Alle Originalantworten <span class="answer-count">${result.answers.length}</span></h4><div class="text-samples text-samples-all">${result.answers.map((answer, index) => `<div class="text-sample"><strong>${index + 1}</strong>${escapeHtml(answer)}</div>`).join("")}</div></div>
@@ -2425,9 +2497,18 @@ $$("[data-goal-info]").forEach((button) =>
   button.addEventListener("click", () => showGoalExplanation(button.dataset.goalInfo)),
 );
 $("#combineStudies").addEventListener("click", combineSelectedStudies);
+$("#compareStudies").addEventListener("click", compareSelectedStudies);
+$("#saveProject").addEventListener("click", saveProject);
+$("#openProject").addEventListener("click", openProjectDialog);
+$("#closeProject").addEventListener("click", () => $("#projectOverlay").classList.add("hidden"));
+$("#closeComparison").addEventListener("click", () => $("#comparisonOverlay").classList.add("hidden"));
+$("#exportWorkbook").addEventListener("click", () => downloadDatasetExport("xlsx"));
+$("#exportReport").addEventListener("click", () => downloadDatasetExport("report"));
+$("#checkUpdates").addEventListener("click", checkForUpdates);
 $$(".nav-item").forEach((button) => button.addEventListener("click", () => !button.disabled && changeView(button.dataset.view)));
 renderStudies();
 setAnalysisMode("guided");
+loadVersion();
 
 const reviewDatasetId = new URLSearchParams(window.location.search).get("review");
 if (reviewDatasetId) {

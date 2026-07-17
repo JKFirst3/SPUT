@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -8,17 +7,26 @@ import express from "express";
 import multer from "multer";
 import { analyzeVariables, summarizeQuestion } from "./analysis.js";
 import { combineDatasets } from "./combine.js";
+import { ComparisonService } from "./comparison-service.js";
+import { DatasetStore } from "./dataset-store.js";
+import { ExportService } from "./export-service.js";
 import { geographyForDataset } from "./geography.js";
 import { parseUserTestingExport } from "./parser.js";
+import { ProjectRepository } from "./project-repository.js";
+import { UpdateService } from "./update-service.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const root = path.resolve(__dirname, "..");
 const uploadDir = path.join(root, ".uploads");
 const savedViewsDir = path.join(root, ".saved-views");
+const projectsDir = path.join(root, ".projects");
 await fs.mkdir(uploadDir, { recursive: true });
 await fs.mkdir(savedViewsDir, { recursive: true });
+const packageInfo = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
+export const APP_VERSION = packageInfo.version;
 
-const app = express();
+export const app = express();
 const runFile = promisify(execFile);
 const upload = multer({
   dest: uploadDir,
@@ -27,7 +35,12 @@ const upload = multer({
     callback(null, /\.xlsx$/i.test(file.originalname));
   },
 });
-const datasets = new Map();
+const datasets = new DatasetStore();
+const projects = new ProjectRepository(projectsDir);
+const comparisons = new ComparisonService();
+const exports = new ExportService();
+const updates = new UpdateService({ currentVersion: APP_VERSION, repository: "JKFirst3/SPUT" });
+await projects.initialize();
 
 function safeFileName(value, fallback = "ansicht") {
   return String(value || fallback)
@@ -54,8 +67,7 @@ app.post("/api/import", upload.single("file"), async (request, response) => {
   if (!request.file) return response.status(400).json({ error: "Bitte eine XLSX-Datei auswählen." });
   try {
     const dataset = await parseUserTestingExport(request.file.path, request.file.originalname);
-    const id = crypto.randomUUID();
-    datasets.set(id, dataset);
+    const id = datasets.add(dataset);
     const summaries = dataset.questions.map((question) => ({
       questionId: question.id,
       ...summarizeQuestion(dataset, question),
@@ -70,12 +82,11 @@ app.post("/api/import", upload.single("file"), async (request, response) => {
 
 app.post("/api/combine", (request, response) => {
   const ids = [...new Set(request.body.ids ?? [])];
-  const entries = ids.map((id) => ({ id, dataset: datasets.get(id) })).filter((entry) => entry.dataset);
+  const entries = datasets.entries(ids);
   if (entries.length < 2) return response.status(422).json({ error: "Bitte mindestens zwei geladene Studien auswählen." });
   try {
     const combined = combineDatasets(entries, request.body.name);
-    const id = crypto.randomUUID();
-    datasets.set(id, combined.dataset);
+    const id = datasets.add(combined.dataset);
     response.json({
       id,
       dataset: { ...combined.dataset, geography: geographyForDataset(combined.dataset) },
@@ -278,11 +289,80 @@ app.post("/api/external/load-view", async (_request, response) => {
   }
 });
 
-app.get("/api/health", (_request, response) => response.json({ status: "ok", app: "SPUT" }));
+app.post("/api/compare", (request, response) => {
+  try {
+    response.json(comparisons.compare(datasets.entries(request.body.ids ?? [])));
+  } catch (error) {
+    response.status(422).json({ error: error.message });
+  }
+});
+
+app.get("/api/projects", async (_request, response) => {
+  try {
+    response.json({ projects: await projects.list() });
+  } catch (error) {
+    response.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/projects", async (request, response) => {
+  try {
+    const entries = datasets.entries(request.body.studyIds ?? []);
+    if (!entries.length) return response.status(422).json({ error: "Das Projekt enthält noch keine Studien." });
+    const studies = entries.map(({ id, dataset }) => ({
+      id,
+      dataset,
+      summaries: dataset.questions.map((question) => ({ questionId: question.id, ...summarizeQuestion(dataset, question) })),
+      combined: Boolean(dataset.sources),
+    }));
+    const project = await projects.save({
+      id: request.body.id,
+      name: request.body.name,
+      studies,
+      activeStudyId: request.body.activeStudyId,
+    });
+    response.json({ id: project.id, name: project.name, updatedAt: project.updatedAt });
+  } catch (error) {
+    response.status(422).json({ error: error.message });
+  }
+});
+
+app.get("/api/projects/:id", async (request, response) => {
+  try {
+    const project = await projects.get(request.params.id);
+    project.studies.forEach((study) => datasets.add(study.dataset, study.id));
+    response.json(project);
+  } catch (error) {
+    response.status(404).json({ error: `Projekt konnte nicht geöffnet werden: ${error.message}` });
+  }
+});
+
+app.get("/api/datasets/:id/export.xlsx", async (request, response) => {
+  const dataset = datasets.get(request.params.id);
+  if (!dataset) return response.status(404).json({ error: "Datensatz nicht gefunden." });
+  const buffer = await exports.workbook(dataset);
+  response.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  response.setHeader("Content-Disposition", `attachment; filename="${safeFileName(dataset.name, "SPUT_Export")}.xlsx"`);
+  response.send(buffer);
+});
+
+app.get("/api/datasets/:id/report.html", (request, response) => {
+  const dataset = datasets.get(request.params.id);
+  if (!dataset) return response.status(404).json({ error: "Datensatz nicht gefunden." });
+  const summaries = dataset.questions.map((question) => ({ questionId: question.id, ...summarizeQuestion(dataset, question) }));
+  response.setHeader("Content-Disposition", `attachment; filename="${safeFileName(dataset.name, "SPUT_Bericht")}.html"`);
+  response.type("html").send(exports.report(dataset, summaries));
+});
+
+app.get("/api/version", (_request, response) => response.json({ version: APP_VERSION }));
+app.get("/api/updates/check", async (_request, response) => response.json(await updates.check()));
+
+app.get("/api/health", (_request, response) => response.json({ status: "ok", app: "SPUT", version: APP_VERSION }));
 
 app.use((_request, response) => response.sendFile(path.join(root, "public/index.html")));
 
-const port = Number(process.env.PORT) || 4173;
-app.listen(port, () => {
-  console.log(`SPUT läuft auf http://localhost:${port}`);
-});
+export function startServer(port = Number(process.env.PORT) || 4173) {
+  return app.listen(port, () => console.log(`SPUT läuft auf http://localhost:${port}`));
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) startServer();
