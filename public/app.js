@@ -45,11 +45,12 @@ const analysisNavigator = new AnalysisNavigator(state);
 
 function updateChartDefaults() {
   const miele = state.settings.guiDesign === "miele";
+  const dark = document.documentElement.dataset.theme === "dark";
   Chart.defaults.font.family = miele
     ? "Arial, 'Helvetica Neue', sans-serif"
     : "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif";
-  Chart.defaults.color = state.settings.themeMode === "dark" ? (miele ? "#d5d2cc" : "#aeb8ca") : (miele ? "#665f57" : "#7a8595");
-  Chart.defaults.borderColor = state.settings.themeMode === "dark" ? (miele ? "#4a4540" : "#263245") : (miele ? "#d5d2cc" : "#edf0f5");
+  Chart.defaults.color = dark ? (miele ? "#c7c3bd" : "#aeb8ca") : "#7a8595";
+  Chart.defaults.borderColor = dark ? (miele ? "#353332" : "#263245") : "#edf0f5";
 }
 
 function applyGuiDesign(value, rerender = false) {
@@ -60,6 +61,7 @@ function applyGuiDesign(value, rerender = false) {
   PRIMARY_RGBA = palette.primaryRgba;
   colors = [...palette.chartColors];
   document.documentElement.dataset.gui = design;
+  document.documentElement.dataset.theme = design === "miele" ? "dark" : state.settings.themeMode;
   localStorage.setItem("sput.guiDesign", design);
   $$('[data-gui-design]').forEach((button) => {
     const active = button.dataset.guiDesign === design;
@@ -73,7 +75,7 @@ function applyGuiDesign(value, rerender = false) {
 function applyTheme(mode, rerender = false) {
   const theme = mode === "dark" ? "dark" : "light";
   state.settings.themeMode = theme;
-  document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.theme = state.settings.guiDesign === "miele" ? "dark" : theme;
   localStorage.setItem("sput.themeMode", theme);
   updateChartDefaults();
   if (!rerender || !state.dataset) return;

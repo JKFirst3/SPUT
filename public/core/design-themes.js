@@ -11,7 +11,7 @@ export const DESIGN_THEMES = Object.freeze({
     label: "Miele-Design",
     primary: "#8c0014",
     primaryRgba: "rgba(140,0,20,.72)",
-    chartColors: ["#8c0014", "#f59b00", "#1e1e1e", "#aba79e", "#c0bdb5", "#b9303f", "#665f57", "#d5d2cc"],
+    chartColors: ["#b0132d", "#d5d2cc", "#6f1a28", "#f59b00", "#8e8982", "#c15c6c", "#71806f", "#eeeae4"],
   }),
 });
 

@@ -2,7 +2,7 @@
 
 **Statistical Package for User Testing** ist ein lokales Analysewerkzeug für UserTesting-Exporte.
 
-Aktuelle Version: **1.1.0**. Die Versionsregeln stehen in [docs/VERSIONING.md](docs/VERSIONING.md), die technische Struktur in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Aktuelle Version: **1.1.1**. Die Versionsregeln stehen in [docs/VERSIONING.md](docs/VERSIONING.md), die technische Struktur in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Start
 
@@ -73,7 +73,7 @@ Danach läuft SPUT unter [http://localhost:4173](http://localhost:4173).
 - eigenständiger, druckbarer HTML-Ergebnisbericht zum Teilen oder als PDF-Druck
 - nachvollziehbare Freitext-Themen über einen Begriff-Kookkurrenzgraphen mit Abdeckung und Originalbelegen
 - manuell ausgelöste Update-Prüfung gegen veröffentlichte GitHub-Releases
-- umschaltbares Oberflächendesign: klassische SPUT-GUI oder vollständiges Miele-Design mit offizieller Markenpalette und Logo
+- umschaltbares Oberflächendesign: klassische SPUT-GUI oder dauerhaft dunkles Miele-Premiumdesign mit offizieller Markenpalette und Logo
 - rein lokale Verarbeitung
 
 ## Projekte, Ansichten und Vergleiche

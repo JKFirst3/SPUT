@@ -26,7 +26,7 @@ SPUT verarbeitet UserTesting-XLSX-Exporte lokal. Die Architektur trennt Datenimp
 
 ## Oberflächendesigns
 
-`data-gui="classic|miele"` am Wurzelelement wählt das Designsystem, `data-theme="light|dark"` bleibt davon unabhängig. Dadurch stehen klassisches und Miele-Design jeweils in heller und dunkler Darstellung zur Verfügung. Die Auswahl wird ausschließlich lokal unter `sput.guiDesign` gespeichert. Das Miele-Logo liegt als lokales PNG unter `public/assets`; es wird nur im Miele-Modus eingeblendet und verursacht keine externe Anfrage.
+`data-gui="classic|miele"` am Wurzelelement wählt das Designsystem. Das klassische Design übernimmt `data-theme="light|dark"`; das Miele-Design erzwingt bewusst eine dauerhaft dunkle Premium-Darstellung und stellt beim Zurückwechseln die zuvor gewählte klassische Helligkeit wieder her. Die Auswahl wird ausschließlich lokal unter `sput.guiDesign` gespeichert. Das Miele-Logo liegt als lokales PNG unter `public/assets`; es wird nur im Miele-Modus bündig am oberen Bildschirmrand eingeblendet und verursacht keine externe Anfrage.
 
 ## Projekt und Ansicht
 
