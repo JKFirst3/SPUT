@@ -2,7 +2,7 @@
 
 **Statistical Package for User Testing** ist ein lokales Analysewerkzeug für UserTesting-Exporte.
 
-Aktuelle Version: **1.1.2**. Die Versionsregeln stehen in [docs/VERSIONING.md](docs/VERSIONING.md), die technische Struktur in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Aktuelle Version: **1.2.0**. Die Versionsregeln stehen in [docs/VERSIONING.md](docs/VERSIONING.md), die technische Struktur in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Start
 

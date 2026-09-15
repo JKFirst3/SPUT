@@ -111,6 +111,11 @@ function percent(value) {
   return `${Math.round(value * 100)} %`;
 }
 
+function shareOfTotal(count, total) {
+  const value = total ? (count / total) * 100 : 0;
+  return `${value.toLocaleString("de-DE", { minimumFractionDigits: value > 0 && value < 1 ? 1 : 0, maximumFractionDigits: 1 })} %`;
+}
+
 function shortened(value, length = 108) {
   const string = String(value ?? "");
   return string.length > length ? `${string.slice(0, length).trim()}…` : string;
@@ -193,6 +198,7 @@ function inferMetadataKind(column) {
 
 function questionKind(question) {
   if (question.type === "instruction") return "instruction";
+  if (question.type === "ranking") return "ranking";
   if (["single_choice", "multiple_choice"].includes(question.type)) return "categorical";
   if (question.columns.length > 1) return "complex";
   if (["scale", "nps", "numeric"].includes(question.type) && question.columns.length === 1) return "numeric";
@@ -913,12 +919,17 @@ function rawVariableValues(record, variable) {
   return entries.map((entry) => entry.value);
 }
 
-function filteredRecords() {
+function filteredRecords(filters = state.interactiveFilters) {
   if (!state.dataset) return [];
   return state.dataset.records.filter((record) =>
-    state.interactiveFilters.every((filter) => {
+    filters.every((filter) => {
       const variable = state.variables.find((candidate) => candidate.id === filter.variableId);
       if (!variable) return true;
+      if (filter.mode === "ranking") {
+        return (filter.conditions ?? []).every((condition) =>
+          String(record[condition.rankKey] ?? "").trim() === condition.option,
+        );
+      }
       const values = rawVariableValues(record, variable);
       if (filter.mode === "range") {
         return values.some((value) => {
@@ -1014,10 +1025,19 @@ function textThemesForVariable(variable, records) {
 }
 
 function interactiveDatasetVariables() {
-  return state.variables.filter((variable) => ["categorical", "numeric", "text"].includes(variable.kind));
+  return state.variables.filter((variable) => ["categorical", "numeric", "ranking", "text"].includes(variable.kind));
 }
 
 function interactiveItemsForVariable(variable, records) {
+  if (variable.kind === "ranking") {
+    return variable.question.columns.map((column) => ({
+      label: `Rang ${column.label}`,
+      count: records.filter((record) => {
+        const value = String(record[column.key] ?? "").trim();
+        return value && value !== "—";
+      }).length,
+    }));
+  }
   if (variable.kind === "text") return textThemesForVariable(variable, records);
   if (variable.kind === "numeric") return numericBucketsForVariable(variable, records);
   return distributionForVariable(variable, records, 12);
@@ -1029,7 +1049,87 @@ function showInteractiveDetail(variable) {
   const overlay = $("#interactiveDetailOverlay");
   $("#interactiveDetailTitle").textContent = variable.label;
   $("#interactiveDetailMeta").textContent = `${values.length} Antworten aus ${records.length} sichtbaren Fällen${state.interactiveFilters.length ? " · aktuelle Filter berücksichtigt" : ""}`;
-  if (variable.kind === "text") {
+  if (variable.kind === "ranking") {
+    const question = variable.question;
+    const ranks = question.columns;
+    const preferredChoices = question.review?.choices ?? [];
+    const observedChoices = state.dataset.records.flatMap((record) =>
+      ranks.map((column) => String(record[column.key] ?? "").trim()).filter((value) => value && value !== "—"),
+    );
+    const choices = [...new Set([...preferredChoices, ...observedChoices])];
+    const activeFilter = state.interactiveFilters.find((filter) => filter.variableId === variable.id && filter.mode === "ranking");
+    const selectedRanks = new Map((activeFilter?.conditions ?? []).map((condition) => [condition.option, condition.rankKey]));
+    $("#interactiveDetailMeta").textContent = "Wähle für eine oder mehrere Optionen den gewünschten Rang. Mehrere Vorgaben werden gemeinsam erfüllt.";
+    $("#interactiveDetailBody").innerHTML = choices.length
+      ? `<div class="ranking-filter-editor">
+          <div class="ranking-filter-head"><span>Option der Rangliste</span><span>Gewünschter Rang</span></div>
+          ${choices.map((choice) => `<label class="ranking-filter-row">
+            <span>${escapeHtml(choice)}</span>
+            <select data-ranking-choice="${escapeHtml(choice)}">
+              <option value="">Beliebiger Rang</option>
+              ${ranks.map((column) => `<option value="${escapeHtml(column.key)}" ${selectedRanks.get(choice) === column.key ? "selected" : ""}>Rang ${escapeHtml(column.label)}</option>`).join("")}
+            </select>
+          </label>`).join("")}
+          <div class="ranking-filter-preview" id="rankingFilterPreview" aria-live="polite"></div>
+          <p class="ranking-filter-hint">Beispiel: „Option A – Rang 1“ und „Option B – Rang 2“ zeigt nur Fälle, die beide Bedingungen gleichzeitig erfüllen.</p>
+          <div class="ranking-filter-actions">
+            ${activeFilter ? `<button class="secondary-button" id="clearRankingFilter">Rankingfilter entfernen</button>` : ""}
+            <button class="primary-button" id="applyRankingFilter">Auswahl anwenden</button>
+          </div>
+        </div>`
+      : `<p class="empty-analysis">Für diese Rangfolge wurden keine Optionen erkannt.</p>`;
+    const readConditions = () => [...$("#interactiveDetailBody").querySelectorAll('[data-ranking-choice]')]
+      .map((select) => {
+        const column = ranks.find((candidate) => candidate.key === select.value);
+        return column ? { rankKey: column.key, rankLabel: column.label, option: select.dataset.rankingChoice } : null;
+      })
+      .filter(Boolean);
+    const filtersWithoutThisRanking = state.interactiveFilters.filter((filter) => !(filter.variableId === variable.id && filter.mode === "ranking"));
+    const baseRecords = filteredRecords(filtersWithoutThisRanking);
+    const updateRankingPreview = () => {
+      const conditions = readConditions();
+      const preview = $("#rankingFilterPreview");
+      if (!preview) return;
+      if (new Set(conditions.map((condition) => condition.rankKey)).size !== conditions.length) {
+        preview.innerHTML = "<strong>Ungültige Kombination</strong><span>Jeder Rang kann nur einmal vergeben sein.</span>";
+        preview.classList.add("invalid");
+        return;
+      }
+      const matches = baseRecords.filter((record) => conditions.every((condition) =>
+        String(record[condition.rankKey] ?? "").trim() === condition.option,
+      )).length;
+      preview.classList.remove("invalid");
+      preview.innerHTML = conditions.length
+        ? `<strong>${shareOfTotal(matches, state.dataset.records.length)} der Gesamtmenge</strong><span>${matches} von ${state.dataset.records.length} Fällen entsprechen dieser Filterkombination.</span>`
+        : `<strong>Noch keine Rangbedingung gewählt</strong><span>${baseRecords.length} von ${state.dataset.records.length} Fällen entsprechen den übrigen aktiven Filtern.</span>`;
+    };
+    $$('[data-ranking-choice]').forEach((select) => select.addEventListener("change", updateRankingPreview));
+    updateRankingPreview();
+    $("#applyRankingFilter")?.addEventListener("click", () => {
+      const conditions = readConditions();
+      if (new Set(conditions.map((condition) => condition.rankKey)).size !== conditions.length) {
+        toast("Jeder Rang kann innerhalb einer Rangliste nur einmal vergeben sein.");
+        return;
+      }
+      state.interactiveFilters = state.interactiveFilters.filter((filter) => !(filter.variableId === variable.id && filter.mode === "ranking"));
+      if (conditions.length) {
+        state.interactiveFilters.push({
+          variableId: variable.id,
+          label: variable.shortLabel,
+          value: conditions.map((condition) => `${condition.option}: Rang ${condition.rankLabel}`).join(" + "),
+          mode: "ranking",
+          conditions,
+        });
+      }
+      closeInteractiveDetail();
+      renderInteractiveDashboard();
+    });
+    $("#clearRankingFilter")?.addEventListener("click", () => {
+      state.interactiveFilters = state.interactiveFilters.filter((filter) => !(filter.variableId === variable.id && filter.mode === "ranking"));
+      closeInteractiveDetail();
+      renderInteractiveDashboard();
+    });
+  } else if (variable.kind === "text") {
     $("#interactiveDetailBody").innerHTML = values.length
       ? `<div class="detail-answer-list">${values.map((value, index) => `<article><strong>${index + 1}</strong><p>${escapeHtml(value)}</p></article>`).join("")}</div>`
       : `<p class="empty-analysis">Für diese Frage sind im aktuellen Segment keine Freitextantworten vorhanden.</p>`;
@@ -1062,9 +1162,9 @@ function renderInteractiveDashboard() {
     .map((variable, index) => ({ variable, index, items: interactiveItemsForVariable(variable, records) }))
     .filter((card) => card.items.length > 0 && !state.hiddenInteractiveCards.has(card.variable.id));
   $("#interactiveStatus").textContent =
-    `${records.length} von ${state.dataset.records.length} Fällen sichtbar · ${state.interactiveFilters.length} aktive Filter${locked ? " · weiterer Filter gesperrt" : ""}`;
+    `${records.length} von ${state.dataset.records.length} Fällen sichtbar · ${shareOfTotal(records.length, state.dataset.records.length)} der Gesamtmenge · ${state.interactiveFilters.length} aktive Filter${locked ? " · weiterer Filter gesperrt" : ""}`;
   $("#filteredRecordTitle").textContent =
-    state.interactiveFilters.length ? `${records.length} passende Fälle` : "Alle Teilnehmenden";
+    state.interactiveFilters.length ? `${records.length} passende Fälle · ${shareOfTotal(records.length, state.dataset.records.length)}` : "Alle Teilnehmenden";
   $("#interactiveFilters").innerHTML = state.interactiveFilters.length
     ? state.interactiveFilters.map((filter, index) => `<button class="filter-chip" data-filter-index="${index}"><span>${escapeHtml(filter.label)}</span><strong>${escapeHtml(filter.value)}</strong>×</button>`).join("")
     : `<span class="filter-empty">Noch kein Filter aktiv</span>`;
@@ -1074,12 +1174,15 @@ function renderInteractiveDashboard() {
 
   $("#interactiveGrid").innerHTML = visibleCards.length ? visibleCards.map(({ variable, index, items }) => {
     const isText = variable.kind === "text";
-    const canvas = items.length && !isText ? `<div class="interactive-chart"><canvas id="interactiveChart${index}"></canvas></div>` : "";
+    const isRanking = variable.kind === "ranking";
+    const canvas = items.length && !isText && !isRanking ? `<div class="interactive-chart"><canvas id="interactiveChart${index}"></canvas></div>` : "";
     const chips = isText
       ? `<div class="theme-list interactive-themes">${items.map((item) => `<button data-filter-variable="${variable.id}" data-filter-mode="text" data-filter-value="${escapeHtml(item.label)}" ${locked ? "disabled" : ""}>${escapeHtml(item.label)} · ${item.count}</button>`).join("")}</div>`
+      : isRanking
+        ? `<div class="ranking-card-summary"><span>Ränge einzeln oder kombiniert filtern</span><strong>Auswahl öffnen →</strong></div>`
       : "";
     return `<article class="interactive-card" data-variable-id="${variable.id}" tabindex="0" role="button" aria-label="${escapeHtml(variable.label)} detailliert anzeigen">
-      <div class="question-top"><span class="question-number">${escapeHtml(variable.shortLabel.split(" · ")[0])}</span><span class="question-type">${variable.kind === "numeric" ? "Zahlen" : variable.kind === "text" ? "Freitext" : "Kategorie"}</span></div>
+      <div class="question-top"><span class="question-number">${escapeHtml(variable.shortLabel.split(" · ")[0])}</span><span class="question-type">${variable.kind === "numeric" ? "Zahlen" : variable.kind === "text" ? "Freitext" : variable.kind === "ranking" ? "Rangfolge" : "Kategorie"}</span></div>
       <button class="hide-card-button" data-hide-card="${variable.id}" title="Kachel ausblenden" aria-label="Kachel ausblenden">−</button>
       <h4 title="${escapeHtml(variable.label)}">${escapeHtml(shortened(variable.label, 92))}</h4>
       ${canvas}${chips}
@@ -1087,7 +1190,7 @@ function renderInteractiveDashboard() {
   }).join("") : `<div class="interactive-empty panel"><span>◉</span><strong>Keine Kacheln sichtbar</strong><p>Für das aktuelle Segment gibt es keine weiteren Werte, oder alle passenden Kacheln wurden ausgeblendet.</p></div>`;
 
   variables.forEach((variable, index) => {
-    if (variable.kind === "text") return;
+    if (["text", "ranking"].includes(variable.kind)) return;
     const canvas = $(`#interactiveChart${index}`);
     if (!canvas) return;
     const items = interactiveItemsForVariable(variable, records);
