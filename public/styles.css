@@ -665,8 +665,6 @@ select:focus, input:focus { border-color: #9aa9ff; box-shadow: 0 0 0 3px rgba(va
 .review-other .theme-list { margin-top:8px; }
 .review-footer { padding:14px 20px; background:white; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:9px; }
 .toast { position: fixed; right: 24px; bottom: 24px; z-index: 60; background: #202b3b; color: white; border-radius: 12px; padding: 13px 16px; box-shadow: var(--shadow); font-size: 12px; max-width: 370px; }
-.miele-header-logo { display:none; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
-.miele-header-logo img { display:block; width:92px; height:35px; object-fit:contain; }
 .design-setting { display:grid; gap:12px; padding:14px; border:1px solid var(--line); background:var(--surface-solid); border-radius:14px; }
 .design-setting > div:first-child > strong { display:block; color:var(--text); font-size:12px; }
 .design-setting > div:first-child > p { margin:3px 0 0; color:var(--muted); font-size:10px; line-height:1.45; }
@@ -685,7 +683,7 @@ select:focus, input:focus { border-color: #9aa9ff; box-shadow: 0 0 0 3px rgba(va
 .miele-preview i:nth-child(2) { background:#fff; border-bottom:1px solid #d5d2cc; }
 .miele-preview i:nth-child(3) { margin:5px; background:#8c0014; box-shadow:8px 0 0 #f59b00; }
 
-/* Miele GUI: permanently dark, quiet and premium. */
+/* Dunkelrote Variante */
 :root[data-gui="miele"] {
   color-scheme:dark;
   --bg:#171616;
@@ -730,8 +728,6 @@ select:focus, input:focus { border-color: #9aa9ff; box-shadow: 0 0 0 3px rgba(va
 :root[data-gui="miele"] .settings-button { color:#ddd9d3; background:#252526; border-color:rgba(255,255,255,.1); }
 :root[data-gui="miele"] .new-import { color:#fff; background:linear-gradient(135deg,#a4001c,#790012); border-color:#a4001c; font-weight:700; box-shadow:0 10px 26px rgba(140,0,20,.18); }
 :root[data-gui="miele"] .topbar { height:96px; padding:0 38px; background:rgba(11,11,12,.95); border-bottom:1px solid rgba(255,255,255,.08); backdrop-filter:blur(28px); }
-:root[data-gui="miele"] .miele-header-logo { display:block; position:fixed; left:calc(50vw - var(--sidebar-width)); top:0; z-index:20; transform:translateX(-50%); }
-:root[data-gui="miele"] .miele-header-logo img { width:142px; height:54px; object-fit:cover; border-radius:0 0 3px 3px; box-shadow:0 12px 30px rgba(0,0,0,.32); }
 :root[data-gui="miele"] .eyebrow,:root[data-gui="miele"] .section-kicker { color:#bd9b9f; letter-spacing:1.7px; }
 :root[data-gui="miele"] .dataset-chip,:root[data-gui="miele"] .icon-button { color:#ddd9d3; background:#252526; border-color:rgba(255,255,255,.1); border-radius:999px; }
 :root[data-gui="miele"] .view { padding-top:34px; }

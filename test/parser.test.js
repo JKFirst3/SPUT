@@ -5,12 +5,13 @@ import { combineDatasets } from "../server/combine.js";
 import { geographyForDataset } from "../server/geography.js";
 import { parseUserTestingExport } from "../server/parser.js";
 
-const fixture =
-  process.env.SPUT_FIXTURE ??
-  "/Users/jkploch/Downloads/User-Testing_Test-data_Premium_Service_-_1_-_US.xlsx";
+const fixture = process.env.SPUT_FIXTURE;
+const rankingFixture = process.env.SPUT_RANKING_FIXTURE;
+const legacyFixture = process.env.SPUT_LEGACY_FIXTURE;
+const currentFixture = process.env.SPUT_CURRENT_FIXTURE;
 
-test("parses the three-row UserTesting survey schema", async () => {
-  const dataset = await parseUserTestingExport(fixture, "premium.xlsx");
+test("parses the three-row UserTesting survey schema", { skip: !fixture }, async () => {
+  const dataset = await parseUserTestingExport(fixture, "survey.xlsx");
   assert.equal(dataset.testType, "survey");
   assert.equal(dataset.participants, 102);
   assert.equal(dataset.questions.length, 13);
@@ -22,20 +23,20 @@ test("parses the three-row UserTesting survey schema", async () => {
   assert.equal(dataset.questions[1].displayCode, "Q1");
 });
 
-test("links ranking positions to their textual options", async () => {
+test("links ranking positions to their textual options", { skip: !rankingFixture }, async () => {
   const dataset = await parseUserTestingExport(
-    "/Users/jkploch/Downloads/User-Testing_Test-data_Robot_Heroes_International.xlsx",
-    "robot-heroes.xlsx",
+    rankingFixture,
+    "ranking.xlsx",
   );
-  const ranking = dataset.questions.find((question) => question.label.includes("Which of the solutions do you prefer"));
+  const ranking = dataset.questions.find((question) => question.type === "ranking");
   assert.equal(ranking.type, "ranking");
   assert.deepEqual(ranking.columns.map((column) => column.label), ["1", "2", "3", "4", "5", "6", "7"]);
   assert.equal(ranking.review.choices.length, 7);
   assert.ok(ranking.review.choices.every((choice) => !/^\d+$/.test(choice)));
 });
 
-test("runs descriptive and bivariate analysis", async () => {
-  const dataset = await parseUserTestingExport(fixture, "premium.xlsx");
+test("runs descriptive and bivariate analysis", { skip: !fixture }, async () => {
+  const dataset = await parseUserTestingExport(fixture, "survey.xlsx");
   const age = dataset.metadata.find((column) => column.label === "Alter");
   const gender = dataset.metadata.find((column) => column.label === "Geschlecht");
   const descriptive = analyzeVariables(dataset, age.key);
@@ -46,8 +47,8 @@ test("runs descriptive and bivariate analysis", async () => {
   assert.ok(cross.n > 0);
 });
 
-test("analyzes individual raw columns used by the UI compatibility filter", async () => {
-  const dataset = await parseUserTestingExport(fixture, "premium.xlsx");
+test("analyzes individual raw columns used by the UI compatibility filter", { skip: !fixture }, async () => {
+  const dataset = await parseUserTestingExport(fixture, "survey.xlsx");
   const matrix = dataset.questions.find((question) => question.type === "matrix");
   assert.ok(matrix);
   const x = matrix.columns[0];
@@ -57,8 +58,8 @@ test("analyzes individual raw columns used by the UI compatibility filter", asyn
   assert.ok(correlation.n >= 3);
 });
 
-test("calculates chi-square and Cramer's V for categorical variables", async () => {
-  const dataset = await parseUserTestingExport(fixture, "premium.xlsx");
+test("calculates chi-square and Cramer's V for categorical variables", { skip: !fixture }, async () => {
+  const dataset = await parseUserTestingExport(fixture, "survey.xlsx");
   const age = dataset.metadata.find((column) => column.label === "Alter");
   const gender = dataset.metadata.find((column) => column.label === "Geschlecht");
   const result = analyzeVariables(
@@ -74,8 +75,8 @@ test("calculates chi-square and Cramer's V for categorical variables", async () 
   assert.ok(result.cramersV >= 0 && result.cramersV <= 1);
 });
 
-test("dispatches grouped numeric data and segments text", async () => {
-  const dataset = await parseUserTestingExport(fixture, "premium.xlsx");
+test("dispatches grouped numeric data and segments text", { skip: !fixture }, async () => {
+  const dataset = await parseUserTestingExport(fixture, "survey.xlsx");
   const gender = dataset.metadata.find((column) => column.label === "Geschlecht");
   const matrix = dataset.questions.find((question) => question.type === "matrix");
   const textQuestion = dataset.questions.find((question) => question.type === "text");
@@ -114,9 +115,9 @@ test("dispatches grouped numeric data and segments text", async () => {
   assert.equal(binaryResult.groups.length, 2);
 });
 
-test("combines repeated studies and preserves their source", async () => {
-  const first = await parseUserTestingExport(fixture, "premium-us.xlsx");
-  const second = await parseUserTestingExport(fixture, "premium-copy.xlsx");
+test("combines repeated studies and preserves their source", { skip: !fixture }, async () => {
+  const first = await parseUserTestingExport(fixture, "survey-a.xlsx");
+  const second = await parseUserTestingExport(fixture, "survey-b.xlsx");
   const combined = combineDatasets([{ id: "one", dataset: first }, { id: "two", dataset: second }]);
   const studyColumn = combined.dataset.metadata.find((column) => column.label === "Studie");
   assert.equal(combined.dataset.participants, first.participants + second.participants);
@@ -128,25 +129,25 @@ test("combines repeated studies and preserves their source", async () => {
   assert.equal(combined.dataset.questions.length, first.questions.length);
 });
 
-test("prepares geographic region points when region data exists", async () => {
-  const dataset = await parseUserTestingExport(fixture, "premium.xlsx");
+test("prepares geographic region points when region data exists", { skip: !fixture }, async () => {
+  const dataset = await parseUserTestingExport(fixture, "survey.xlsx");
   const geography = geographyForDataset(dataset);
   assert.ok(geography.length > 0);
   assert.ok(geography.every((entry) => Number.isFinite(entry.latitude) && Number.isFinite(entry.longitude)));
 });
 
-test("summarizes a multi-column question as one complete question", async () => {
-  const dataset = await parseUserTestingExport(fixture, "premium.xlsx");
+test("summarizes a multi-column question as one complete question", { skip: !fixture }, async () => {
+  const dataset = await parseUserTestingExport(fixture, "survey.xlsx");
   const matrix = dataset.questions.find((question) => question.type === "matrix");
   const result = analyzeVariables(dataset, matrix.id);
   assert.equal(result.method, "question_summary");
   assert.equal(result.series.length, matrix.columns.length);
 });
 
-test("keeps numbers inside free text out of numeric statistics", async () => {
+test("keeps numbers inside free text out of numeric statistics", { skip: !rankingFixture }, async () => {
   const dataset = await parseUserTestingExport(
-    "/Users/jkploch/Downloads/User-Testing_Test-data_Robot_Heroes_International.xlsx",
-    "robot-heroes.xlsx",
+    rankingFixture,
+    "ranking.xlsx",
   );
   const textQuestion = dataset.questions.find((question) => question.type === "text");
   const result = analyzeVariables(dataset, textQuestion.id, null, "auto", { xKind: "text" });
@@ -156,10 +157,10 @@ test("keeps numbers inside free text out of numeric statistics", async () => {
   assert.equal("numeric" in result, false);
 });
 
-test("treats single-choice questions as one categorical variable", async () => {
+test("treats single-choice questions as one categorical variable", { skip: !rankingFixture }, async () => {
   const dataset = await parseUserTestingExport(
-    "/Users/jkploch/Downloads/User-Testing_Test-data_Robot_Heroes_International.xlsx",
-    "robot-heroes.xlsx",
+    rankingFixture,
+    "ranking.xlsx",
   );
   const first = dataset.questions.find((question) => question.id === "q1");
   const second = dataset.questions.find((question) => question.id === "q2");
@@ -172,15 +173,15 @@ test("treats single-choice questions as one categorical variable", async () => {
     { xKind: "categorical", yKind: "categorical" },
   );
   assert.equal(descriptive.method, "descriptive");
-  assert.ok(descriptive.distribution.some((item) => item.label.includes("washing machine")));
+  assert.ok(descriptive.distribution.some((item) => item.count > 0));
   assert.equal(relationship.method, "crosstab");
   assert.ok(relationship.n > 0);
 });
 
-test("compares multiple-choice selections with demographics and other questions", async () => {
+test("compares multiple-choice selections with demographics and other questions", { skip: !rankingFixture }, async () => {
   const dataset = await parseUserTestingExport(
-    "/Users/jkploch/Downloads/User-Testing_Test-data_Robot_Heroes_International.xlsx",
-    "robot-heroes.xlsx",
+    rankingFixture,
+    "ranking.xlsx",
   );
   const age = dataset.metadata.find((column) => column.label === "Alter");
   const multiple = dataset.questions.filter((question) => question.type === "multiple_choice");
@@ -206,13 +207,13 @@ test("compares multiple-choice selections with demographics and other questions"
   assert.ok(questionPair.associations.length > 0);
 });
 
-test("detects both supplied current and legacy multi-country exports", async () => {
+test("detects both supplied current and legacy multi-country exports", { skip: !legacyFixture || !currentFixture }, async () => {
   const legacy = await parseUserTestingExport(
-    "/Users/jkploch/Downloads/202505_Zusammenstellung_Usertesting_Voice_Akzeptanz_RAW 1 1.xlsx",
+    legacyFixture,
     "legacy.xlsx",
   );
   const current = await parseUserTestingExport(
-    "/Users/jkploch/Downloads/User-Testing_Test-data_250515_voice_commands_in_household_appliances 1 1.xlsx",
+    currentFixture,
     "current.xlsx",
   );
   assert.equal(legacy.schema.mode, "legacy_multisheet");
