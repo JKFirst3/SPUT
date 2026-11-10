@@ -4,7 +4,7 @@ SPUT steht für **Statistical Package for User Testing**. Die App analysiert XLS
 
 ## Installation und Start
 
-Du brauchst [Node.js 22 oder 24](https://nodejs.org/en/download) und einen aktuellen Browser. Lade den [Quellcode als ZIP](https://github.com/JKFirst3/SPUT/archive/refs/heads/main.zip) herunter und entpacke ihn. Alternativ kannst du das Repository klonen.
+Du brauchst [Node.js 22 oder 24](https://nodejs.org/en/download) und einen aktuellen Desktop-Browser. Die Oberfläche ist für Fenster ab etwa 1100 Pixel Breite ausgelegt. Lade den [Quellcode als ZIP](https://github.com/JKFirst3/SPUT/archive/refs/heads/main.zip) herunter und entpacke ihn. Alternativ kannst du das Repository klonen.
 
 ```sh
 git clone https://github.com/JKFirst3/SPUT.git
@@ -14,13 +14,13 @@ cd SPUT
 Öffne im entpackten oder geklonten Ordner ein Terminal und führe aus:
 
 ```sh
-npm ci
+npm ci --ignore-scripts
 npm start
 ```
 
 Öffne [http://localhost:4173](http://localhost:4173). Beende den Server im Terminal mit **Strg+C**. Falls der Port belegt ist, kannst du die Umgebungsvariable `PORT` setzen und die entsprechende Adresse öffnen. Falls dein Browser `localhost` nicht erreicht, verwende [http://127.0.0.1:4173](http://127.0.0.1:4173).
 
-Nach `npm ci` kannst du auf macOS auch `SPUT starten.command` und auf Windows `SPUT starten.bat` verwenden. Zum Beenden dienen die jeweiligen Dateien mit `SPUT beenden` im Namen.
+Nach `npm ci --ignore-scripts` kannst du auf macOS auch `SPUT starten.command` und auf Windows `SPUT starten.bat` verwenden. Zum Beenden dienen die jeweiligen Dateien mit `SPUT beenden` im Namen.
 
 ## Erste Analyse
 
