@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+SCRIPT_PATH="${0:A}"
+SERVER_PATH="${SCRIPT_PATH:h}/server/index.js"
 PORT="4173"
 
 echo "SPUT wird beendet ..."
@@ -14,7 +16,7 @@ fi
 
 for PID in ${(f)PIDS}; do
   COMMAND=$(ps -p "$PID" -o command=)
-  if [[ "$COMMAND" == *"server/index.js"* ]] || [[ "$COMMAND" == *"node"* ]]; then
+  if [[ "$COMMAND" == "node $SERVER_PATH" || "$COMMAND" == */"node $SERVER_PATH" ]]; then
     echo "Beende SPUT-Prozess $PID ..."
     kill "$PID"
   else

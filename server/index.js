@@ -21,8 +21,8 @@ const root = path.resolve(__dirname, "..");
 const uploadDir = path.join(root, ".uploads");
 const savedViewsDir = path.join(root, ".saved-views");
 const projectsDir = path.join(root, ".projects");
-await fs.mkdir(uploadDir, { recursive: true });
-await fs.mkdir(savedViewsDir, { recursive: true });
+await fs.mkdir(uploadDir, { recursive: true, mode: 0o700 });
+await fs.mkdir(savedViewsDir, { recursive: true, mode: 0o700 });
 const packageInfo = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
 export const APP_VERSION = packageInfo.version;
 
@@ -30,7 +30,7 @@ export const app = express();
 const runFile = promisify(execFile);
 const upload = multer({
   dest: uploadDir,
-  limits: { fileSize: 30 * 1024 * 1024 },
+  limits: { fileSize: 30 * 1024 * 1024, files: 1, fields: 0 },
   fileFilter: (_request, file, callback) => {
     callback(null, /\.xlsx$/i.test(file.originalname));
   },
@@ -55,6 +55,31 @@ async function runAppleScript(lines) {
   const { stdout } = await runFile("osascript", lines.flatMap((line) => ["-e", line]));
   return stdout.trim();
 }
+
+app.disable("x-powered-by");
+
+app.use((request, response, next) => {
+  const host = request.get("host")?.toLowerCase();
+  const allowedHosts = ["127.0.0.1", "localhost"].flatMap((name) => [name, `${name}:${request.socket.localPort}`]);
+  if (!allowedHosts.includes(host)) return response.status(403).json({ error: "SPUT ist nur über die lokale Adresse erreichbar." });
+
+  response.set({
+    "Content-Security-Policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+    "Referrer-Policy": "no-referrer",
+    "X-Content-Type-Options": "nosniff",
+  });
+  next();
+});
+
+app.use("/api", (request, response, next) => {
+  const origin = request.get("origin");
+  const site = request.get("sec-fetch-site");
+  if ((origin && origin !== `http://${request.get("host").toLowerCase()}`) || site === "cross-site" || site === "same-site") {
+    return response.status(403).json({ error: "Die SPUT-API akzeptiert nur Anfragen von der eigenen Oberfläche." });
+  }
+  response.set("Cache-Control", "no-store");
+  next();
+});
 
 app.use(express.json({ limit: "1mb" }));
 app.use("/vendor/chart.js", express.static(path.join(root, "node_modules/chart.js/dist")));
@@ -229,7 +254,7 @@ app.post("/api/saved-views", async (request, response) => {
       savedAt: new Date().toISOString(),
     };
     const fileName = `${name}.json`;
-    await fs.writeFile(path.join(savedViewsDir, fileName), JSON.stringify(payload, null, 2), "utf8");
+    await fs.writeFile(path.join(savedViewsDir, fileName), JSON.stringify(payload, null, 2), { mode: 0o600 });
     response.json({ id: fileName, path: `.saved-views/${fileName}` });
   } catch (error) {
     response.status(422).json({ error: error.message });
@@ -359,10 +384,25 @@ app.get("/api/updates/check", async (_request, response) => response.json(await 
 
 app.get("/api/health", (_request, response) => response.json({ status: "ok", app: "SPUT", version: APP_VERSION }));
 
-app.use((_request, response) => response.sendFile(path.join(root, "public/index.html")));
+app.use("/api", (_request, response) => response.status(404).json({ error: "API-Endpunkt nicht gefunden." }));
+app.get("/", (_request, response) => response.sendFile(path.join(root, "public/index.html")));
+app.use((error, _request, response, next) => {
+  if (response.headersSent) return next(error);
+  if (error.code === "LIMIT_FILE_SIZE" || error.status === 413) {
+    return response.status(413).json({ error: "Die Datei oder Anfrage ist zu groß." });
+  }
+  if (error instanceof multer.MulterError || error.status === 400) {
+    return response.status(400).json({ error: "Die Anfrage oder Datei konnte nicht gelesen werden." });
+  }
+  console.error(error);
+  response.status(500).json({ error: "Interner SPUT-Fehler." });
+});
 
 export function startServer(port = Number(process.env.PORT) || 4173) {
-  return app.listen(port, () => console.log(`SPUT läuft auf http://localhost:${port}`));
+  const server = app.listen(port, "127.0.0.1", () => {
+    console.log(`SPUT läuft auf http://localhost:${server.address().port}`);
+  });
+  return server;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === __filename) startServer();

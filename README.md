@@ -1,87 +1,55 @@
 # SPUT
 
-**Statistical Package for User Testing** ist ein lokales Analysewerkzeug für UserTesting-Exporte.
+SPUT steht für **Statistical Package for User Testing**. Die App analysiert XLSX-Umfrageexporte von UserTesting lokal im Browser. Sie unterstützt aktuelle Exporte mit einem Datenblatt und ältere Exporte mit mehreren Länderblättern.
 
-Aktuelle Version: **1.1.2**. Die Versionsregeln stehen in [docs/VERSIONING.md](docs/VERSIONING.md), die technische Struktur in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+## Installation und Start
 
-## Start
+Du brauchst [Node.js 22 oder 24](https://nodejs.org/en/download) und einen aktuellen Desktop-Browser. Die Oberfläche ist für Fenster ab etwa 1100 Pixel Breite ausgelegt. Lade den [Quellcode als ZIP](https://github.com/JKFirst3/SPUT/archive/refs/heads/main.zip) herunter und entpacke ihn. Alternativ kannst du das Repository klonen.
 
-Am einfachsten auf dem Mac:
+```sh
+git clone https://github.com/JKFirst3/SPUT.git
+cd SPUT
+```
 
-1. Node.js installieren, falls es noch nicht vorhanden ist.
-2. `SPUT starten.command` per Rechtsklick > Öffnen starten.
-3. Wenn der Browser nicht automatisch aufgeht: [http://localhost:4173](http://localhost:4173) öffnen.
-4. Zum Beenden `SPUT beenden.command` starten.
+Öffne im entpackten oder geklonten Ordner ein Terminal und führe aus:
 
-Unter Windows:
-
-1. Node.js installieren, falls es noch nicht vorhanden ist.
-2. `SPUT starten.bat` doppelklicken.
-3. Zum Beenden `SPUT beenden.bat` doppelklicken.
-
-Die Startdateien verwenden automatisch den Ordner, in dem sie liegen. Der SPUT-Ordner kann deshalb auf einen anderen Rechner kopiert oder verschoben werden, ohne Pfade in den Dateien anzupassen.
-Die Startdateien starten den Node-Prozess direkt im Hintergrund und öffnen die App erst, nachdem der Prozess weiterhin aktiv ist und Port 4173 tatsächlich bereitsteht.
-
-Manuell im Terminal:
-
-```bash
-npm install
+```sh
+npm ci --ignore-scripts
 npm start
 ```
 
-Danach läuft SPUT unter [http://localhost:4173](http://localhost:4173).
+Öffne [http://localhost:4173](http://localhost:4173). Beende den Server im Terminal mit **Strg+C**. Falls der Port belegt ist, kannst du die Umgebungsvariable `PORT` setzen und die entsprechende Adresse öffnen. Falls dein Browser `localhost` nicht erreicht, verwende [http://127.0.0.1:4173](http://127.0.0.1:4173).
 
-## Aktueller Funktionsumfang
+Nach `npm ci --ignore-scripts` kannst du auf macOS auch `SPUT starten.command` und auf Windows `SPUT starten.bat` verwenden. Zum Beenden dienen die jeweiligen Dateien mit `SPUT beenden` im Namen.
 
-- Import von UserTesting-Umfrageexporten im XLSX-Format
-- automatische Erkennung des dreizeiligen Exportschemas
-- erneute Fragetyp-Erkennung nach dem Zusammenführen alter Länderblätter, damit kleine Länderstichproben Freitext nicht fälschlich als Auswahl festlegen
-- Rekonstruktion von Fragen mit mehreren Antwortspalten
-- Erkennung von Einfach-/Mehrfachauswahl, offenen Antworten, Skalen, Matrix und Ranking
-- verbindlicher Import-Prüfschritt für Studienname, Fragetext, Antwortoptionen und Fragetyp
-- technische Exportspalten wie „Antwort“ und „Andere“ werden nicht als Optionen behandelt
-- „Andere“ wird als separater Freitextkanal erkannt; die tatsächlich gewählten Antworten bilden die Optionsliste
-- Anweisungen und Hinweise werden als eigener, nicht analysierbarer Inhaltstyp erkannt
-- Fragen erscheinen im normalen Datenpool immer genau einmal als vollständige Frage
-- einzelne Matrix-/Ranking-Items werden nur im Expertenmodus als Untervariablen angeboten
-- automatisch generiertes Dashboard
-- vollständiger KI-Export als JSON inklusive Datenwörterbuch, Rohdaten, Zusammenfassungen und editierbarem Prompt
-- kompakter Prompt-Export als Markdown
-- interaktives Filter-Dashboard mit klickbaren Diagrammen für Demografie, Fragen, Skalen und Freitext-Themen
-- speicherbare gefilterte Segmentansichten inklusive aktiver Filter und ausgeblendeter Kacheln
-- interner Ansichtsspeicher im Projektordner `.saved-views` oder externer Speicher per Finder-Dateidialog
-- anklickbare Dashboard-Kacheln mit direktem Wechsel in Daten oder Analyse
-- Zielgruppen-Explorer für demografische, regionale und technische Segmente
-- lokale Regionskarte mit Teilnehmerverteilung, sofern Länder- und Regionsdaten vorhanden sind
-- Themencluster für offene Antworten
-- Datenexplorer mit frei wählbaren Spalten, Bereichsfilter und Fallsuche
-- deskriptive Statistik, Kreuztabellen, Pearson- und Spearman-Korrelation
-- Chi-Quadrat-Unabhängigkeitstest mit Cramérs V
-- Welch-t-Test für zwei Gruppen und einfaktorielle ANOVA für mehr als zwei Gruppen
-- segmentierte Wort- und Themenanalyse für Freitext × Kategorie/Zahlenwert
-- methodenabhängige Anzeige statistisch kompatibler Variablen
-- geführter Analyse-Assistent mit verständlicher Kernaussage für Nutzer ohne Statistikkenntnisse
-- separater Expertenmodus mit direkter Auswahl der statistischen Methode
-- kategorisierter Datenpool für Durchführung, Zielgruppe, Auswahlfragen, Skalen und Freitext
-- Studienbibliothek zum Laden und Kombinieren mehrerer Länder-/Sprachvarianten desselben Tests
-- dauerhafte Projektverwaltung: vollständige Studien speichern und nach einem Neustart wieder öffnen
-- direkter Studienvergleich gemeinsamer Fragen, ohne die Quelldatensätze zu verändern
-- Herkunftsvariable pro Fall bei kombinierten Datensätzen
-- verständliche Interpretationshinweise zu Tests, p-Werten und Effektstärken
-- PNG-Export erzeugter Diagramme und CSV-Export tabellarischer Testergebnisse
-- vollständiger Excel-Export mit Übersicht, Fragebogen und Rohdaten
-- eigenständiger, druckbarer HTML-Ergebnisbericht zum Teilen oder als PDF-Druck
-- nachvollziehbare Freitext-Themen über einen Begriff-Kookkurrenzgraphen mit Abdeckung und Originalbelegen
-- manuell ausgelöste Update-Prüfung gegen veröffentlichte GitHub-Releases
-- umschaltbares Oberflächendesign: klassische SPUT-GUI oder dauerhaft dunkles Miele-Premiumdesign mit offizieller Markenpalette und Logo
-- rein lokale Verarbeitung
+## Erste Analyse
 
-## Projekte, Ansichten und Vergleiche
+1. Erzeuge im Projektordner mit `npm run demo` eine Datei namens `SPUT-Beispiel.xlsx`. Sie enthält vier erfundene Fälle, eine Auswahlfrage, Freitext, eine Matrix und eine Rankingfrage.
+2. Importiere die Datei über die App. Prüfe den Studiennamen, die erkannten Fragen und ihre Typen. Bestätige den Import.
+3. Öffne das Dashboard und probiere die Filter aus. Unter **Analyse** kannst du Variablen vergleichen und die passende Auswertung auswählen.
+4. Speichere die Studie als Projekt, wenn du sie nach einem Neustart weiterbearbeiten willst.
 
-Ein Projekt speichert alle geladenen Studien vollständig unter `.projects`. Eine interaktive Ansicht speichert dagegen nur Filter und ausgeblendete Kacheln unter `.saved-views`. Beim Direktvergleich bleiben Studien getrennt; „Kombinieren“ erstellt bewusst einen zusätzlichen gemeinsamen Datensatz mit Herkunftsvariable.
+Für eigene Studien benötigst du den originalen XLSX-Umfrageexport mit seinen drei Kopfzeilen. Die Uploadgrenze beträgt 30 MiB pro Datei. Die App erkennt unter anderem Einfach- und Mehrfachauswahl, Skalen, Freitext, Matrix und Ranking.
 
-## Updates
+## Funktionen
 
-Unter Einstellungen kann SPUT nach einem neuen GitHub-Release suchen. Es installiert niemals ungefragt Code. Solange das Repository privat ist oder noch kein Release besitzt, meldet die Prüfung, dass keine öffentliche Version verfügbar ist. Eine neue Version wird erst nach Tests als GitHub-Release veröffentlicht.
+- Dashboard mit klickbaren Filtern, Zielgruppen-Explorer und Regionskarte, wenn geografische Angaben vorliegen.
+- Datenexplorer mit Fallsuche, auswählbaren Spalten und Bereichsfiltern.
+- Geführte Analyse und Expertenmodus für deskriptive Statistik, Kreuztabellen, Korrelationen, Gruppenvergleiche und Freitext-Themen.
+- Projektbibliothek zum Speichern, Kombinieren und Vergleichen von Studien. Kombinierte Daten behalten die Herkunft pro Fall.
+- Exporte als Excel, CSV, PNG und druckbarer HTML-Bericht sowie JSON- und Markdown-Exporte für die weitere Analyse.
 
-Andere UserTesting-Testarten sind im Datenmodell vorgesehen, werden in dieser Version aber noch nicht ausgewertet.
+## Lokale Daten und Sicherheit
+
+SPUT ist für eine Person am eigenen Rechner gedacht. Verwende die lokale Adresse und importiere Dateien aus vertrauenswürdigen Quellen. Die [Sicherheitsrichtlinie](SECURITY.md) beschreibt die Grenzen des lokalen Betriebs und den privaten Meldeweg.
+
+- Geladene Studien liegen bis zum Beenden im Arbeitsspeicher. Der Import legt während der Verarbeitung eine temporäre Kopie unter `.uploads` ab.
+- Gespeicherte Projekte unter `.projects` enthalten vollständige Studien einschließlich Rohdaten. Gespeicherte Ansichten unter `.saved-views` enthalten Filter und ausgeblendete Kacheln. Filterwerte können sensible Angaben enthalten.
+- Prüfe Exporte vor dem Teilen. Insbesondere Excel- und KI-JSON-Exporte können Rohdaten enthalten. Ein Upload eines Exports zu einem KI-Dienst gibt die enthaltenen Daten an den jeweiligen Anbieter weiter.
+- Die Analyse läuft lokal. Die manuelle Update-Prüfung fragt nur die Release-Informationen auf GitHub ab. Die Installation von Abhängigkeiten über npm erfordert Internetzugang.
+
+## Entwicklung und Lizenz
+
+Mit `npm test` laufen die öffentlichen Tests mit synthetischen Daten. Optionale Kompatibilitätstests verwenden lokal bereitgestellte XLSX-Dateien und werden ohne die passenden Umgebungsvariablen übersprungen. Die Dateipfade werden über `SPUT_FIXTURE`, `SPUT_RANKING_FIXTURE` oder das Paar `SPUT_LEGACY_FIXTURE` und `SPUT_CURRENT_FIXTURE` gesetzt. Diese Tests erwarten die jeweils in den Assertions beschriebenen Exportprofile.
+
+Siehe [Mitwirken](CONTRIBUTING.md), [Architektur](docs/ARCHITECTURE.md) und [Versionierung](docs/VERSIONING.md). Der SPUT-Code steht unter der [MIT-Lizenz](LICENSE). Abhängigkeiten haben eigene Lizenzen. SPUT ist ein unabhängiges Projekt.

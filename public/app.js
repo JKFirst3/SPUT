@@ -1975,7 +1975,7 @@ async function saveProject() {
 async function openProjectDialog() {
   try {
     const { projects } = await api.get("/api/projects");
-    $("#projectList").innerHTML = projects.length ? projects.map((project) => `<button class="saved-view-entry" data-project-id="${project.id}"><span><strong>${escapeHtml(project.name)}</strong><small>${project.studyCount} Studien · ${project.participantCount} Teilnehmende</small></span><small>${new Date(project.updatedAt).toLocaleString("de-DE")}</small></button>`).join("") : '<p class="empty-analysis">Noch kein Projekt gespeichert.</p>';
+    $("#projectList").innerHTML = projects.length ? projects.map((project) => `<button class="saved-view-entry" data-project-id="${escapeHtml(project.id)}"><span><strong>${escapeHtml(project.name)}</strong><small>${project.studyCount} Studien · ${project.participantCount} Teilnehmende</small></span><small>${new Date(project.updatedAt).toLocaleString("de-DE")}</small></button>`).join("") : '<p class="empty-analysis">Noch kein Projekt gespeichert.</p>';
     $$("[data-project-id]").forEach((button) => button.onclick = async () => {
       try {
         await projectManager.open(button.dataset.projectId);
@@ -2166,7 +2166,12 @@ function exportAnalysisPng() {
 
 function downloadCsv(filename, rows) {
   const csv = rows
-    .map((row) => row.map((value) => `"${String(value ?? "").replaceAll('"', '""')}"`).join(";"))
+    .map((row) => row.map((value) => {
+      const text = String(value ?? "");
+      // Spreadsheet apps can interpret a quoted string as a formula.
+      const safeText = typeof value === "string" && /^(?:\s*[=+@-]|[\t\r\n])/.test(text) ? `'${text}` : text;
+      return `"${safeText.replaceAll('"', '""')}"`;
+    }).join(";"))
     .join("\n");
   const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
   const link = document.createElement("a");

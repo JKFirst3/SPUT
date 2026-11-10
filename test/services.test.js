@@ -103,7 +103,7 @@ test("small current-format samples still recognize evidence-backed free text", a
   assert.equal(parsed.questions[0].type, "text");
 });
 
-test("GUI designs expose stable classic and official Miele palettes", () => {
+test("GUI designs expose stable classic and dark red palettes", () => {
   assert.equal(normalizeDesignTheme("unknown"), "classic");
   assert.equal(normalizeDesignTheme("miele"), "miele");
   assert.equal(designTheme("miele").primary, "#8c0014");

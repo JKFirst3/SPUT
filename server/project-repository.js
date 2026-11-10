@@ -18,7 +18,7 @@ export class ProjectRepository {
   }
 
   async initialize() {
-    await fs.mkdir(this.directory, { recursive: true });
+    await fs.mkdir(this.directory, { recursive: true, mode: 0o700 });
   }
 
   async list() {
@@ -55,7 +55,7 @@ export class ProjectRepository {
       activeStudyId,
       studies,
     };
-    await fs.writeFile(path.join(this.directory, `${safeName(projectId)}.json`), JSON.stringify(project, null, 2), "utf8");
+    await fs.writeFile(path.join(this.directory, `${safeName(projectId)}.json`), JSON.stringify(project, null, 2), { mode: 0o600 });
     return project;
   }
 
