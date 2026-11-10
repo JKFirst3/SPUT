@@ -11,7 +11,7 @@
     "demo": "node scripts/demo-workbook.mjs"
   },
   "dependencies": {
-    "chart.js": "^4.4.9",
+    "chart.js": "^4.6.1",
     "country-state-city": "^3.2.1",
     "d3": "^7.9.0",
     "exceljs": "^4.4.0",
